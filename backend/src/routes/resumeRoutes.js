@@ -5,7 +5,7 @@ const router = express.Router();
 router.get('/', async (req , res) => {
   try {
     const { data, error } = await supabase
-      .from('jobs')
+      .from('resume')
       .select('*');
 
     // Check if Supabase returned an error
@@ -17,26 +17,26 @@ router.get('/', async (req , res) => {
     return res.json(data);
 
   } catch (error) {
-    console.error('Error fetching jobs:', error);
+    console.error('Error fetching resumes:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-router.get('/:jobID', async (req , res) => {
+router.get('/:id', async (req , res) => {
   try {
-    const jobID = req.params.jobID;
+    const id = req.params.id;
 
     const { data, error } = await supabase
-      .from('jobs')
+      .from('resume')
       .select('*')
-      .eq('jobID', jobID)
+      .eq('id', id)
       .single();
 
     // Check if Supabase returned an error
     if (error) {
         // PGRST116 is the code for "No rows found"
         if (error.code === 'PGRST116') {
-            return res.status(404).json({ error: 'Job not found' });
+            return res.status(404).json({ error: 'Resume not found' });
         }
         return res.status(500).json({ error: error.message });
     }
@@ -45,18 +45,18 @@ router.get('/:jobID', async (req , res) => {
     return res.json(data);
 
   } catch (error) {
-    console.error('Error fetching jobs:', error);
+    console.error('Error fetching resumess:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 router.post('/', async (req, res) => {
     try{
-        const { Title, Description, Location, Company } = req.body;
+        const { contact, education, experience, skills, certifications, references } = req.body;
 
         const { data, error } = await supabase
-            .from('jobs')
-            .insert([{ Title, Description, Location, Company}])
+            .from('resume')
+            .insert([{ contact, education, experience, skills, certifications, references}])
             .select();
 
         if (error) {
@@ -66,44 +66,47 @@ router.post('/', async (req, res) => {
         return res.status(201).json(data);
 
     } catch (error) {
-        console.error('Error creating job:', error);
+        console.error('Error creating resume:', error);
         res.status(500).json({error: 'Internal Server Error'});
 }});
 
-router.delete('/:jobID', async (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        const jobID = req.params.jobID;
+        const id = req.params.id;
 
         const { data, error } = await supabase
-            .from('jobs')
+            .from('resume')
             .delete()
-            .eq('jobID', jobID)
+            .eq('id', id)
             .select();
 
         if (error) {
             return res.status(500).json({ error: error.message });
         }   
 
-        // make the sure the job was found and deleted
+        // make the sure the resume was found and deleted
         if (!data || data.length === 0) {
-            return res.status(404).json({ error: 'Job not found' });
+            return res.status(404).json({ error: 'Resume not found' });
         }
 
-        return res.json({ message: 'Job deleted successfully', data }); 
+        return res.json({ message: 'Resume deleted successfully', data }); 
     } catch (error) {
-        console.error('Error deleting job:', error);
+        console.error('Error deleting Resume:', error);
         res.status(500).json({ error: 'Internal Server Error' });
 }});
 
-router.put('/:jobID', async (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const jobID = req.params.jobID;
+        const id = req.params.id;
 
         const allowedUpdates = {};
-        if (req.body.Title !== undefined) allowedUpdates.Title = req.body.Title;
-        if (req.body.Company !== undefined) allowedUpdates.Company = req.body.Company;
-        if (req.body.Location !== undefined) allowedUpdates.Location = req.body.Location;
-        if (req.body.Description !== undefined) allowedUpdates.Description = req.body.Description;
+        if (req.body.contact !== undefined) allowedUpdates.contact = req.body.contact;
+        if (req.body.education !== undefined) allowedUpdates.education = req.body.education;
+        if (req.body.experience !== undefined) allowedUpdates.experience = req.body.experience;
+        if (req.body.skills !== undefined) allowedUpdates.skills = req.body.skills;
+        if (req.body.certifications !== undefined) allowedUpdates.certifications = req.body.certifications;
+        if (req.body.references !== undefined) allowedUpdates.references = req.body.references;
+
 
         // If nothing to update, return early
         if (Object.keys(allowedUpdates).length === 0) {
@@ -111,9 +114,9 @@ router.put('/:jobID', async (req, res) => {
         }
 
         const { data, error } = await supabase
-            .from('jobs')
+            .from('resume')
             .update(allowedUpdates)
-            .eq('jobID', jobID)
+            .eq('id', id)
             .select();
 
         if (error) {
@@ -121,12 +124,12 @@ router.put('/:jobID', async (req, res) => {
         }
 
         if (!data || data.length === 0) {
-            return res.status(404).json({error: 'job not found'});
+            return res.status(404).json({error: 'resume not found'});
         }
         return res.json(data);
 
     } catch (error) {
-        console.error('Error updating job:', error);
+        console.error('Error updating resume:', error);
         res.status(500).json({ error: 'Internal Server Error' });
 }});
 
