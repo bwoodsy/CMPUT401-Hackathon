@@ -3,18 +3,33 @@ const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const jobsRoutes = require('./routes/jobsRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
+const notifRoutes = require('./routes/notifRoutes'); 
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://172.27.224.1:3000",
+  process.env.FRONTEND_URL, 
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // allow tools like Postman / server-to-server requests (no origin)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 // Routes
 app.get('/health', (req, res) => {
@@ -23,7 +38,8 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
-
+app.use('/api/resumes', resumeRoutes);
+app.use('/api/notifications', notifRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
