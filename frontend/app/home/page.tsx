@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
 
 
@@ -14,7 +13,6 @@ type Job = {
   "Applied Users": { id: string }[] | null;
 };
 export default function HomePage() {
-  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,7 +42,7 @@ export default function HomePage() {
 
 
 return (
-     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
+    <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
       <header className="mx-auto max-w-5xl px-6 pt-6">
         <nav className="flex gap-6 text-sm">
@@ -84,7 +82,7 @@ return (
       <button
         className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
         onClick={() => {
-          router.push(`/jobs/${job.jobID}`);
+          console.log("View role:", job.jobID);
         }}
       >
         View role
