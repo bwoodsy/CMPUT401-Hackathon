@@ -4,6 +4,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const jobsRoutes = require('./routes/jobsRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
+const notifRoutes = require('./routes/notifRoutes'); 
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,6 +39,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/notifications', notifRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
