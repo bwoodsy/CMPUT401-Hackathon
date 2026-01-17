@@ -66,7 +66,9 @@ export default function JobDetailPage() {
               </div>
 
               <div className="flex gap-4 pt-6">
-                <button className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90">
+                <button 
+                onClick={() => router.push("/apply")}
+                className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90">
                   Apply now
                 </button>
                 <button 
