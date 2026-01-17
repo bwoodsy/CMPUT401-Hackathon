@@ -17,25 +17,29 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-
-
-
-
   useEffect(() => {
-    fetch("http://172.27.224.1:3001/api/jobs/")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch jobs");
-        return res.json();
-      })
-      .then((data) => {
-        setJobs(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Could not load jobs");
-        setLoading(false);
-      });
-  }, []);
+  const fetchJobs = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!BASE_URL) {
+      console.error("NEXT_PUBLIC_BACKEND_URL is not defined!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/jobs/`);
+      if (!res.ok) throw new Error("Failed to fetch jobs");
+
+      const data = await res.json();
+      setJobs(data);
+      setLoading(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchJobs();
+}, []);
+
 
 return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
