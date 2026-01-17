@@ -4,7 +4,7 @@ require('dotenv').config();
 
 // Import routes
 const jobsRoutes = require('./routes/jobs');
-const resumesRoutes = require('./routes/resumes');
+const resumesRoutes = require('./routes/resume');
 const usersRoutes = require('./routes/users');
 const notificationsRoutes = require('./routes/notifications');
 
@@ -21,7 +21,7 @@ app.get('/api/health', (req, res) => {
 
 // Mount routes
 app.use('/api/jobs', jobsRoutes);
-app.use('/api/resumes', resumesRoutes);
+app.use('/api/resume', resumesRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/notifications', notificationsRoutes);
 
