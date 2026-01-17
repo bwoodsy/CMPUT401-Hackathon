@@ -1,8 +1,8 @@
 const express = require('express');
 const supabase = require('../config/supabase');
-const app = express()
+const router = express.Router();
 
-app.get('/api/jobs', async (req , res) => {
+router.get('/', async (req , res) => {
   try {
     const { data, error } = await supabase
       .from('jobs')
@@ -22,7 +22,7 @@ app.get('/api/jobs', async (req , res) => {
   }
 });
 
-app.get('/api/jobs/:jobID', async (req , res) => {
+router.get('/:jobID', async (req , res) => {
   try {
     const jobID = req.params.jobID;
 
@@ -50,13 +50,13 @@ app.get('/api/jobs/:jobID', async (req , res) => {
   }
 });
 
-app.post('/api/jobs', async (req, res) => {
+router.post('/', async (req, res) => {
     try{
-        const { title, company, location, description } = req.body;
+        const { Title, Description, Location, Company } = req.body;
 
         const { data, error } = await supabase
             .from('jobs')
-            .insert([{ title, company, location, description}])
+            .insert([{ Title, Description, Location, Company}])
             .select();
 
         if (error) {
@@ -70,7 +70,7 @@ app.post('/api/jobs', async (req, res) => {
         res.status(500).json({error: 'Internal Server Error'});
 }});
 
-app.delete('/api/jobs/:jobID', async (req, res) => {
+router.delete('/:jobID', async (req, res) => {
     try {
         const jobID = req.params.jobID;
 
@@ -95,15 +95,15 @@ app.delete('/api/jobs/:jobID', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
 }});
 
-app.put('/api/jobs/:jobID', async (req, res) => {
+router.put('/:jobID', async (req, res) => {
     try {
         const jobID = req.params.jobID;
 
         const allowedUpdates = {};
-        if (req.body.title !== undefined) allowedUpdates.title = req.body.title;
-        if (req.body.company !== undefined) allowedUpdates.company = req.body.company;
-        if (req.body.location !== undefined) allowedUpdates.location = req.body.location;
-        if (req.body.description !== undefined) allowedUpdates.description = req.body.description;
+        if (req.body.Title !== undefined) allowedUpdates.Title = req.body.Title;
+        if (req.body.Company !== undefined) allowedUpdates.Company = req.body.Company;
+        if (req.body.Location !== undefined) allowedUpdates.Location = req.body.Location;
+        if (req.body.Description !== undefined) allowedUpdates.Description = req.body.Description;
 
         // If nothing to update, return early
         if (Object.keys(allowedUpdates).length === 0) {
@@ -129,3 +129,5 @@ app.put('/api/jobs/:jobID', async (req, res) => {
         console.error('Error updating job:', error);
         res.status(500).json({ error: 'Internal Server Error' });
 }});
+
+module.exports = router;
