@@ -65,14 +65,35 @@ return (
         <div className="mx-auto mt-10 max-w-2xl space-y-5">
           {loading && <p className="text-center">Loading jobs…</p>}
           {error && <p className="text-center text-red-600">{error}</p>}
-        {jobs.map((job) => (
-          <article key={job.jobID} className="rounded-xl bg-white/70 p-5 shadow-sm">
-            <h2 className="text-sm font-semibold">{job.Title}</h2>
-            <p className="text-xs">{job.Company}</p>
-            <p className="mt-1 text-[11px] text-gray-500">{job.Location}</p>
-            <p className="mt-4 text-sm text-gray-700">{job.Description}</p>
-          </article>
-        ))}
+{jobs.map((job) => (
+  <article
+    key={job.jobID}
+    className="rounded-xl bg-white/70 p-5 shadow-sm"
+  >
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <h2 className="text-sm font-semibold">{job.Title}</h2>
+        <p className="text-xs">{job.Company}</p>
+        <p className="mt-1 text-[11px] text-gray-500">
+          {job.Location}
+        </p>
+      </div>
+
+      <button
+        className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
+        onClick={() => {
+          console.log("View role:", job.jobID);
+        }}
+      >
+        View role
+      </button>
+    </div>
+
+    <p className="mt-4 text-sm text-gray-700">
+      {job.Description}
+    </p>
+  </article>
+))}
 
 
 
