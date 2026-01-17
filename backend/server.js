@@ -3,10 +3,10 @@ const cors = require('cors');
 require('dotenv').config();
 
 // Import routes
-const applicationsRoutes = require('./routes/applications');
+const jobsRoutes = require('./routes/jobs');
 const resumesRoutes = require('./routes/resumes');
-const communicationsRoutes = require('./routes/communications');
-const remindersRoutes = require('./routes/reminders');
+const usersRoutes = require('./routes/users');
+const notificationsRoutes = require('./routes/notifications');
 
 const app = express();
 
@@ -20,10 +20,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount routes
-app.use('/api/applications', applicationsRoutes);
+app.use('/api/jobs', jobsRoutes);
 app.use('/api/resumes', resumesRoutes);
-app.use('/api/communications', communicationsRoutes);
-app.use('/api/reminders', remindersRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3001;
