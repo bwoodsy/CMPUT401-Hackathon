@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const jobsRoutes = require('./routes/jobsRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -15,7 +16,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 // Routes
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
@@ -23,7 +23,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobsRoutes);
-
+app.use('/api/resumes', resumeRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
