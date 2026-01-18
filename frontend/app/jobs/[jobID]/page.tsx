@@ -13,6 +13,8 @@ type Job = {
   Description: string;
 };
 
+
+
 export default function JobDetailPage() {
     const router = useRouter();
   const params = useParams();
@@ -30,51 +32,57 @@ export default function JobDetailPage() {
 
   if (loading) return <div>Loading...</div>;
   if (!job) return <div>Job not found</div>;
+  
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
-      {/* Nav */}
-      <header className="mx-auto max-w-5xl px-6 pt-6 flex items-center justify-between">
-      <nav className="flex gap-6 text-sm">
-        {[ "← Back to listings", "Resume", "About", "Careers"].map((link) => (
+    <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black flex flex-col">
+      {/* Header */}
+      <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
+        <nav className="flex gap-6 text-sm">
+          {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
+            <motion.a
+              key={link}
+              href="/"
+              className="cursor-pointer"
+              whileHover={{ scale: 1.1, color: "#ec4899" }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              {link}
+            </motion.a>
+          ))}
+
           <motion.a
-            key={link}
-            href="/"
-            className="cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }} // pink-500
+            href="#"
+            className="flex items-center gap-1 cursor-pointer"
+            whileHover={{ scale: 1.1, color: "#ec4899" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            {link}
+            Get started →
           </motion.a>
-        ))}
+        </nav>
 
-        <motion.a
-          href="#"
-          className="flex items-center gap-1 cursor-pointer"
-          whileHover={{ scale: 1.1, color: "#ec4899" }}
+        <motion.div
+          whileHover={{ scale: 1.1, opacity: 0.9 }}
           transition={{ type: "spring", stiffness: 300 }}
+          className="cursor-pointer"
+          onClick={() => router.push("/login")}
         >
-          Get started →
-        </motion.a>
-      </nav>
-
-      <motion.div
-        whileHover={{ scale: 1.1, opacity: 0.9 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="cursor-pointer"
-        onClick={() => router.push("/login")}
-      >
-        <CircleUser />
-      </motion.div>
-    </header>
-
+          <CircleUser />
+        </motion.div>
+      </header>
 
       {/* Content */}
-      <section className="mx-auto max-w-5xl px-6 py-12">
+      <section className="mx-auto max-w-5xl px-6 py-12 flex-1">
         {loading && <p className="text-center">Loading job details…</p>}
-        
+
         {!loading && job && (
-          <article className="rounded-xl bg-white/70 p-12 shadow-lg">
+          <motion.article
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="rounded-xl bg-white/80 p-12 shadow-lg mx-auto max-w-3xl"
+          >
             <div className="space-y-6">
               <div>
                 <h1 className="text-5xl font-serif font-bold">{job.Title}</h1>
@@ -89,21 +97,22 @@ export default function JobDetailPage() {
                 </p>
               </div>
 
-              <div className="flex gap-4 pt-6">
-                <button 
-                onClick={() => router.push("/apply")}
-                className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90">
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                <button
+                  onClick={() => router.push("/apply")}
+                  className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
+                >
                   Apply now
                 </button>
-                <button 
-                  onClick={() => router.push('/')}
+                <button
+                  onClick={() => router.push("/")}
                   className="rounded-md border border-black px-8 py-3 text-sm font-semibold hover:bg-black/5"
                 >
                   Back to listings
                 </button>
               </div>
             </div>
-          </article>
+          </motion.article>
         )}
 
         {!loading && !job && (
