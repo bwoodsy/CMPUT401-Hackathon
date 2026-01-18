@@ -13,5 +13,7 @@ router.post('/', applicationsController.createApplication);
 
 router.put('/:applicationId', applicationsController.updateApplication);
 
+router.patch('/:applicationId/notes', applicationsController.updateApplicationNotes);
+
 
 module.exports = router;
