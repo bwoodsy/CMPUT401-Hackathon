@@ -55,7 +55,7 @@ export default function HomePage() {
     fetchJobs();
   }, []);
 
-  //get current user data
+//get current user data
 useEffect(() => {
   // Get current user data
   const getCurrentUser = async () => {
@@ -88,8 +88,6 @@ useEffect(() => {
     } catch (error) {
       console.error('Error fetching user:', error);
     }
-  });
-    return response.json();
   };
   
   getCurrentUser();
