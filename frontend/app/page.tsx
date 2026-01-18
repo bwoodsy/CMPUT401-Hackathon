@@ -149,7 +149,7 @@ export default function HomePage() {
             <div className="flex justify-between gap-4">
                 <div>
                 <h2 className="text-sm font-semibold">Open application</h2>
-                <p className="mt-4 text-sm">Don’t see your role? Apply anyway!</p>
+                <p className="mt-4 text-sm">Don't see your role? Apply anyway!</p>
                 </div>
                 <button className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">
                 Apply now
