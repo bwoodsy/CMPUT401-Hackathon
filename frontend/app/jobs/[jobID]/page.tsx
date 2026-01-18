@@ -108,7 +108,12 @@ export default function JobDetailPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <button
-                  onClick={() => router.push("/apply")}
+                  onClick={() => {
+                    if (localStorage.getItem('accessToken')){
+                    router.push("/apply")}
+                  else{
+                    router.push("/signup")
+                  }}}
                   className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
                 >
                   Apply now
