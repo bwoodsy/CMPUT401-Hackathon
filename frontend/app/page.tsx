@@ -75,7 +75,7 @@ export default function HomePage() {
         whileHover={{ scale: 1.1, opacity: 0.9 }}
         transition={{ type: "spring", stiffness: 300 }}
         className="cursor-pointer"
-        onClick={() => router.push("/home")}
+        onClick={() => router.push("/login")}
       >
         <CircleUser />
       </motion.div>

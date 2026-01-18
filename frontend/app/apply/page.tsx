@@ -23,7 +23,20 @@ type Resume = {
 export default function ApplyPage() {
   const router = useRouter();
   const [resumes, setResumes] = useState<Resume[]>([]);
-    const [selectedResumeId, setSelectedResumeId] = useState("");
+  const [selectedResumeId, setSelectedResumeId] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Function to handle the initial submit click
+    const handleSubmitClick = (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsModalOpen(true);
+    };
+
+    // Function for the 'Confirm' button inside the popup
+    const handleConfirmSubmit = () => {
+        // You would typically perform your final API POST here
+        router.push("/apply/success");
+    };
     
     // Form state for autofill
     const [formData, setFormData] = useState({
@@ -88,7 +101,9 @@ export default function ApplyPage() {
         {/* Header Row */}
         <div className="flex justify-between items-start mb-2">
           <h1 className="text-4xl font-bold tracking-tight text-black">Create/Edit Resume</h1>
-          <button className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90">
+          <button 
+            onClick={handleSubmitClick}
+            className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90">
             Submit
           </button>
         </div>
@@ -198,6 +213,33 @@ export default function ApplyPage() {
 
         </div>
       </article>
+
+      {/* --- POPUP MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
+            <p className="mt-4 text-gray-600">
+              Are you sure you want to submit this resume? You won't be able to edit your details after confirming.
+            </p>
+            
+            <div className="mt-8 flex flex-col gap-3">
+              <button 
+                onClick={handleConfirmSubmit}
+                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Confirm and Submit
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
