@@ -55,43 +55,42 @@ export default function HomePage() {
     fetchJobs();
   }, []);
 
-//get current user data
-useEffect(() => {
   // Get current user data
-  const getCurrentUser = async () => {
-    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const token = localStorage.getItem('accessToken');
-    
-    // If no token, don't attempt to fetch user
-    if (!token) {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`${BASE_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        // If unauthorized, clear the invalid token
-        if (response.status === 401) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-        }
-        throw new Error('Failed to fetch user data');
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const token = localStorage.getItem('accessToken');
+
+      // If no token, don't attempt to fetch user
+      if (!token) {
+        return;
       }
-      
-      const data = await response.json();
-      setUser(data.user); // Access the fullName from the nested user object
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    }
-  };
-  
-  getCurrentUser();
-}, []);
+
+      try {
+        const response = await fetch(`${BASE_URL}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          // If unauthorized, clear the invalid token
+          if (response.status === 401) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
+          throw new Error('Failed to fetch user data');
+        }
+
+        const data = await response.json();
+        setUser(data.user); // Access the fullName from the nested user object
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+
+    getCurrentUser();
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
