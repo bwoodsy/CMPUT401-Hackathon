@@ -38,38 +38,38 @@ export default function JobDetailPage() {
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black flex flex-col">
       {/* Header */}
       <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
-        <nav className="flex gap-6 text-sm">
-          {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
-            <motion.a
-              key={link}
-              href="/"
-              className="cursor-pointer"
-              whileHover={{ scale: 1.1, color: "#ec4899" }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              {link}
-            </motion.a>
-          ))}
-
+      <nav className="flex gap-6 text-sm">
+        {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
           <motion.a
-            href="#"
-            className="flex items-center gap-1 cursor-pointer"
+            key={link}
+            href="/"
+            className="cursor-pointer"
             whileHover={{ scale: 1.1, color: "#ec4899" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            Get started →
+            {link}
           </motion.a>
-        </nav>
+        ))}
 
-        <motion.div
-          whileHover={{ scale: 1.1, opacity: 0.9 }}
+        <motion.a
+          href="#"
+          className="flex items-center gap-1 cursor-pointer"
+          whileHover={{ scale: 1.1, color: "#ec4899" }}
           transition={{ type: "spring", stiffness: 300 }}
-          className="cursor-pointer"
-          onClick={() => router.push("/login")}
         >
-          <CircleUser />
-        </motion.div>
-      </header>
+          Get started →
+        </motion.a>
+      </nav>
+
+      <motion.div
+        whileHover={{ scale: 1.1, opacity: 0.9 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="cursor-pointer"
+        onClick={() => router.push("/login")}
+      >
+        <CircleUser />
+      </motion.div>
+    </header>
 
       {/* Content */}
       <section className="mx-auto max-w-5xl px-6 py-12 flex-1">
