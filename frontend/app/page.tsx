@@ -61,19 +61,17 @@ useEffect(() => {
   const getCurrentUser = async () => {
     const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
     const token = localStorage.getItem('accessToken');
-    
+
     // If no token, don't attempt to fetch user
-    if (!token) {
-      return;
-    }
-    
+    if (!token) return;
+
     try {
       const response = await fetch(`${BASE_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         // If unauthorized, clear the invalid token
         if (response.status === 401) {
@@ -82,18 +80,17 @@ useEffect(() => {
         }
         throw new Error('Failed to fetch user data');
       }
-      
+
       const data = await response.json();
-      setUser(data.user); // Access the fullName from the nested user object
+      setUser(data.user); // Set the user state
     } catch (error) {
       console.error('Error fetching user:', error);
     }
-  });
-    return response.json();
   };
-  
+
   getCurrentUser();
 }, []);
+
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
