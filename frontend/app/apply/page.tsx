@@ -79,6 +79,16 @@ export default function ApplyPage() {
     router.push("/apply/success");
   };
 
+  const handleSubmitClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    // Perform your API POST here
+    router.push("/apply/success");
+  };
+
   return (
     <motion.section
       initial={{ opacity: 0 }}
@@ -229,6 +239,50 @@ export default function ApplyPage() {
           </motion.button>
         </form>
       </motion.article>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
+            <p className="mt-4 text-gray-600">
+              Are you sure you want to submit this resume? You won't be able to edit
+              your details after confirming.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={handleConfirmSubmit}
+                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Confirm and Submit
+              </button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+          )}
+        </section>
+      ))}
+
+      {/* Submit Button at the Bottom */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
+      >
+        Submit
+      </motion.button>
+    </div>
+  </motion.article>
+</motion.section>
 
       {/* Modal */}
       {isModalOpen && (
