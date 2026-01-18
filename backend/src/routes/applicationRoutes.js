@@ -15,5 +15,6 @@ router.put('/:applicationId', applicationsController.updateApplication);
 
 router.patch('/:applicationId/notes', applicationsController.updateApplicationNotes);
 
+router.patch('/:applicationId/stage', applicationsController.updateStage);
 
 module.exports = router;
