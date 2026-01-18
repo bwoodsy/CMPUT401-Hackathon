@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { CircleUser } from "lucide-react";
 
-// Define the Resume type based on your resumeRoutes.js
 type Resume = {
   id: string;
   contact: {
@@ -86,12 +87,22 @@ export default function ApplyPage() {
     };
 
   return (
-    <section className="mx-auto max-w-4xl px-6 py-12">
-      {/* Back Button matching header style */}
-      <div className="mb-6 flex justify-center">
-        <button 
-          onClick={() => router.back()}
-          className="text-2xl font-medium hover:opacity-70 flex items-center gap-2"
+    <motion.section
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: 0.4, ease: "easeOut" }}
+  className="mx-auto max-w-4xl px-6 py-12"
+>
+  {/* Header */}
+  <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
+    <nav className="flex gap-6 text-sm">
+      {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
+        <motion.a
+          key={link}
+          href="/"
+          className="cursor-pointer"
+          whileHover={{ scale: 1.1, color: "#ec4899" }}
+          transition={{ type: "spring", stiffness: 300 }}
         >
           ← Back
         </button>
@@ -139,23 +150,108 @@ export default function ApplyPage() {
             <h2 className="text-xl font-medium text-gray-900 mb-6">
               Contact Information
             </h2>
+          {link}
+        </motion.a>
+      ))}
+
+      <motion.a
+        href="#"
+        className="flex items-center gap-1 cursor-pointer"
+        whileHover={{ scale: 1.1, color: "#ec4899" }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        Get started →
+      </motion.a>
+    </nav>
+
+    <motion.div
+      whileHover={{ scale: 1.1, opacity: 0.9 }}
+      transition={{ type: "spring", stiffness: 300 }}
+      className="cursor-pointer"
+      onClick={() => router.push("/login")}
+    >
+      <CircleUser />
+    </motion.div>
+  </header>
+
+  {/* Main Card */}
+  <motion.article
+    initial={{ opacity: 0, scale: 0.85 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{
+      scale: 1.02,
+      boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+    }}
+    transition={{ duration: 0.5, ease: "easeOut" }}
+    className="rounded-2xl bg-white/80 p-12 shadow-lg border border-gray-50/50 mt-12"
+  >
+    {/* Header */}
+    <div className="mb-2">
+      <h1 className="text-4xl font-bold tracking-tight text-black">
+        Create / Edit Resume
+      </h1>
+    </div>
+
+    <p className="text-gray-600 font-serif mb-10">
+      Edit in the boxes with your details to generate your resume
+    </p>
+
+    {/* Autofill */}
+    <div className="mb-10 p-4 rounded-lg border-gray-100">
+      <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
+        Autofill from saved resume
+      </label>
+      <select
+        value={selectedResumeId}
+        onChange={handleResumeSelect}
+        className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
+      >
+        <option value="">Select a resume...</option>
+        {resumes.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.contact.firstName} {r.contact.lastName} – {r.contact.email}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Form Sections */}
+    <div className="space-y-6">
+      {[
+        { title: "Contact Information", rows: false },
+        { title: "Education", rows: true },
+        { title: "Work Experience", rows: true },
+        { title: "Skills and Abilities", rows: true },
+        { title: "Certifications", rows: true },
+        { title: "References", rows: true },
+      ].map((section, i) => (
+        <section key={i} className="border-t border-gray-100 pt-4">
+          <h2 className="text-xl font-medium text-gray-900 mb-4">
+            {section.title}
+          </h2>
+
+          {section.rows ? (
+            <textarea
+              rows={5}
+              className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
+            />
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
               {[
-                { label: "First Name", placeholder: "-" },
-                { label: "Last name", placeholder: "-" },
-                { label: "Email", placeholder: "-" },
-                { label: "Location", placeholder: "-" },
-                { label: "Phone Number", placeholder: "-" },
-                { label: "Website (optional)", placeholder: "-" },
-              ].map((field, i) => (
-                <div key={i}>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">{field.label}</label>
-                    <input 
-                        required
-                        type="email" 
-                        className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black"
-                        placeholder="-"
-                    />
+                "First Name",
+                "Last Name",
+                "Email",
+                "Location",
+                "Phone Number",
+                "Website (optional)",
+              ].map((label) => (
+                <div key={label}>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    {label}
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black"
+                  />
                 </div>
               ))}
             </div>
@@ -241,5 +337,21 @@ export default function ApplyPage() {
         </div>
       )}
     </section>
+          )}
+        </section>
+      ))}
+
+      {/* Submit Button at the Bottom */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
+      >
+        Submit
+      </motion.button>
+    </div>
+  </motion.article>
+</motion.section>
+
   );
 }
