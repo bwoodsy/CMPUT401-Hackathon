@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CircleUser, Calendar, FileText, X, ChevronDown, Bell, Eye } from "lucide-react";
@@ -14,16 +14,21 @@ import {
 
 type Application = {
   id: string;
-  company: string;
+  company_name: string;
   position: string;
-  dateApplied: string;
-  status: "applied" | "interview" | "offer" | "rejected";
-  followUpDate?: string;
+  date_applied: string;
+  stage_id: string;
+  stage_name: string;
+  notes?: string;
+  resume_id?: string;
   resumeData?: {
     contactInfo: {
       fullName: string;
       email: string;
       phone: string;
+      linkedin?: string;
+      portfolio?: string;
+      location?: string;
     };
     summary: string;
     experiences: Array<{
@@ -31,93 +36,233 @@ type Application = {
       title: string;
       startDate: string;
       endDate: string;
+      description?: string;
     }>;
     education: Array<{
       school: string;
       degree: string;
+      field?: string;
+      graduationDate?: string;
     }>;
     skills: string[];
   };
 };
 
-const STAGES = [
-  { value: "applied", label: "Applied", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "interview", label: "Interview", color: "bg-purple-100 text-purple-700 border-purple-200" },
-  { value: "offer", label: "Offer", color: "bg-green-100 text-green-700 border-green-200" },
-  { value: "rejected", label: "Rejected", color: "bg-red-100 text-red-700 border-red-200" },
-];
+type Stage = {
+  id: string;
+  name: string;
+};
+
+type Notification = {
+  id: string;
+  notification_date: string;
+  message: string;
+  is_completed: boolean;
+};
+
+const STAGE_COLORS: { [key: string]: string } = {
+  'Applied': "bg-blue-100 text-blue-700 border-blue-200",
+  'Interview': "bg-purple-100 text-purple-700 border-purple-200",
+  'Offer': "bg-green-100 text-green-700 border-green-200",
+  'Rejected': "bg-red-100 text-red-700 border-red-200",
+};
 
 export default function ApplicationsPage() {
   const router = useRouter();
+  const [user, setUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [notifications, setNotifications] = useState<{ [key: string]: Notification }>({});
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderDate, setReminderDate] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API call
-  const [applications, setApplications] = useState<Application[]>([
-    {
-      id: "1",
-      company: "Google",
-      position: "Software Engineer",
-      dateApplied: "2025-01-10",
-      status: "interview",
-      followUpDate: "2025-01-25",
-      resumeData: {
-        contactInfo: {
-          fullName: "John Doe",
-          email: "john@email.com",
-          phone: "(555) 123-4567"
-        },
-        summary: "Experienced software engineer with 5+ years...",
-        experiences: [
-          { company: "Tech Corp", title: "Senior Dev", startDate: "2020", endDate: "2024" }
-        ],
-        education: [
-          { school: "MIT", degree: "BS Computer Science" }
-        ],
-        skills: ["React", "Node.js", "Python"]
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const token = localStorage.getItem('accessToken');
+      
+      if (!token) {
+        router.push('/login');
+        return;
       }
-    },
-    {
-      id: "2",
-      company: "Microsoft",
-      position: "Frontend Developer",
-      dateApplied: "2025-01-08",
-      status: "applied",
-      resumeData: {
-        contactInfo: {
-          fullName: "John Doe",
-          email: "john@email.com",
-          phone: "(555) 123-4567"
-        },
-        summary: "Frontend specialist...",
-        experiences: [
-          { company: "Tech Corp", title: "Frontend Dev", startDate: "2019", endDate: "2024" }
-        ],
-        education: [
-          { school: "MIT", degree: "BS Computer Science" }
-        ],
-        skills: ["React", "TypeScript", "CSS"]
+      
+      try {
+        const response = await fetch(`${BASE_URL}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            router.push('/login');
+          }
+          throw new Error('Failed to fetch user data');
+        }
+        
+        const data = await response.json();
+        setUser(data.user);
+        
+        // After getting user, fetch stages and applications
+        if (data.user?.id) {
+          await Promise.all([
+            fetchStages(),
+            fetchApplications(data.user.id),
+            fetchNotifications(data.user.id)
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setLoading(false);
       }
-    },
-    {
-      id: "3",
-      company: "Amazon",
-      position: "Full Stack Engineer",
-      dateApplied: "2025-01-05",
-      status: "rejected",
-    },
-    {
-      id: "4",
-      company: "Meta",
-      position: "Software Engineer",
-      dateApplied: "2025-01-15",
-      status: "offer",
-      followUpDate: "2025-01-22",
-    },
-  ]);
+    };
+    
+    getCurrentUser();
+  }, []);
+
+  const fetchStages = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/stages`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stages');
+      }
+      
+      const result = await response.json();
+      setStages(result.data || []);
+    } catch (error) {
+      console.error('Error fetching stages:', error);
+    }
+  };
+
+  const fetchApplications = async (userId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/applications/${userId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications');
+      }
+      
+      const result = await response.json();
+      
+      // Transform the data to match our Application type
+      const transformedApps = (result.data || []).map((app: any) => ({
+        id: app.id,
+        company_name: app.company_name,
+        position: app.position,
+        date_applied: app.date_applied,
+        stage_id: app.stage_id,
+        stage_name: app.application_stages?.name || 'Applied',
+        notes: app.notes,
+        resume_id: app.resume_id,
+        resumeData: app.resumes?.data ? {
+          contactInfo: app.resumes.data.contactInfo || {},
+          summary: app.resumes.data.summary || '',
+          experiences: app.resumes.data.experiences || [],
+          education: app.resumes.data.education || [],
+          skills: app.resumes.data.skills || []
+        } : undefined
+      }));
+      
+      setApplications(transformedApps);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    }
+  };
+
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/notifications/${userId}/pending`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+      
+      const result = await response.json();
+      
+      // Map notifications by application_id for easy lookup
+      const notifMap: { [key: string]: Notification } = {};
+      (result.data || []).forEach((notif: any) => {
+        notifMap[notif.application_id] = notif;
+      });
+      
+      setNotifications(notifMap);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const updateStatus = async (appId: string, newStageId: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/applications/${appId}/stage`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ stage_id: newStageId })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+      
+      // Update local state
+      const newStageName = stages.find(s => s.id === newStageId)?.name || 'Applied';
+      setApplications(applications.map(app =>
+        app.id === appId ? { ...app, stage_id: newStageId, stage_name: newStageName } : app
+      ));
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
+  const setReminder = async () => {
+    if (!selectedApplication || !reminderDate || !user) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/notifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          application_id: selectedApplication.id,
+          notification_date: reminderDate,
+          message: `Follow up with ${selectedApplication.company_name} - ${selectedApplication.position}`
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create reminder');
+      }
+      
+      const result = await response.json();
+      
+      // Update local notifications state
+      setNotifications({
+        ...notifications,
+        [selectedApplication.id]: result.data
+      });
+      
+      setShowReminderModal(false);
+      setReminderDate("");
+    } catch (error) {
+      console.error('Error setting reminder:', error);
+      alert('Failed to set reminder. Please try again.');
+    }
+  };
 
   const MotionLink = motion(Link);
   const links = [
@@ -128,28 +273,20 @@ export default function ApplicationsPage() {
   ];
 
   const filteredApplications = selectedStage
-    ? applications.filter(app => app.status === selectedStage)
+    ? applications.filter(app => app.stage_id === selectedStage)
     : applications;
 
-  const updateStatus = (appId: string, newStatus: Application["status"]) => {
-    setApplications(applications.map(app =>
-      app.id === appId ? { ...app, status: newStatus } : app
-    ));
+  const getStageColor = (stageName: string) => {
+    return STAGE_COLORS[stageName] || "bg-gray-100 text-gray-700 border-gray-200";
   };
 
-  const setReminder = () => {
-    if (selectedApplication && reminderDate) {
-      setApplications(applications.map(app =>
-        app.id === selectedApplication.id ? { ...app, followUpDate: reminderDate } : app
-      ));
-      setShowReminderModal(false);
-      setReminderDate("");
-    }
-  };
-
-  const getStageColor = (status: string) => {
-    return STAGES.find(s => s.value === status)?.color || "bg-gray-100 text-gray-700";
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 flex items-center justify-center">
+        <p className="text-lg">Loading applications...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100">
@@ -198,19 +335,19 @@ export default function ApplicationsPage() {
           >
             All ({applications.length})
           </button>
-          {STAGES.map((stage) => {
-            const count = applications.filter(app => app.status === stage.value).length;
+          {stages.map((stage) => {
+            const count = applications.filter(app => app.stage_id === stage.id).length;
             return (
               <button
-                key={stage.value}
-                onClick={() => setSelectedStage(stage.value)}
+                key={stage.id}
+                onClick={() => setSelectedStage(stage.id)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                  selectedStage === stage.value
-                    ? stage.color + " font-semibold"
+                  selectedStage === stage.id
+                    ? getStageColor(stage.name) + " font-semibold"
                     : "bg-white/80 text-gray-700 border-gray-200 hover:bg-white"
                 }`}
               >
-                {stage.label} ({count})
+                {stage.name} ({count})
               </button>
             );
           })}
@@ -219,84 +356,88 @@ export default function ApplicationsPage() {
         {/* Applications Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence mode="popLayout">
-            {filteredApplications.map((app) => (
-              <motion.div
-                key={app.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}
-                className="rounded-xl bg-white/80 p-6 shadow-lg backdrop-blur-md relative"
-              >
-                {/* Status Badge */}
-                <div className="flex items-center justify-between mb-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${getStageColor(app.status)}`}>
-                        {STAGES.find(s => s.value === app.status)?.label}
-                        <ChevronDown size={14} />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      {STAGES.map((stage) => (
-                        <DropdownMenuItem
-                          key={stage.value}
-                          onClick={() => updateStatus(app.id, stage.value as Application["status"])}
-                        >
-                          <span className={`px-2 py-1 rounded text-xs ${stage.color}`}>
-                            {stage.label}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredApplications.map((app) => {
+              const notification = notifications[app.id];
+              
+              return (
+                <motion.div
+                  key={app.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  whileHover={{ y: -5, boxShadow: "0 10px 25px rgba(0,0,0,0.15)" }}
+                  className="rounded-xl bg-white/80 p-6 shadow-lg backdrop-blur-md relative"
+                >
+                  {/* Status Badge */}
+                  <div className="flex items-center justify-between mb-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${getStageColor(app.stage_name)}`}>
+                          {app.stage_name}
+                          <ChevronDown size={14} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {stages.map((stage) => (
+                          <DropdownMenuItem
+                            key={stage.id}
+                            onClick={() => updateStatus(app.id, stage.id)}
+                          >
+                            <span className={`px-2 py-1 rounded text-xs ${getStageColor(stage.name)}`}>
+                              {stage.name}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-                  {app.followUpDate && (
-                    <div className="flex items-center gap-1 text-xs text-amber-600">
-                      <Bell size={14} />
-                      {new Date(app.followUpDate).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
+                    {notification && (
+                      <div className="flex items-center gap-1 text-xs text-amber-600">
+                        <Bell size={14} />
+                        {new Date(notification.notification_date).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Company & Position */}
-                <h3 className="text-xl font-bold mb-1">{app.company}</h3>
-                <p className="text-sm text-gray-600 mb-4">{app.position}</p>
+                  {/* Company & Position */}
+                  <h3 className="text-xl font-bold mb-1">{app.company_name}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{app.position}</p>
 
-                {/* Date Applied */}
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-                  <Calendar size={14} />
-                  Applied: {new Date(app.dateApplied).toLocaleDateString()}
-                </div>
+                  {/* Date Applied */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-6">
+                    <Calendar size={14} />
+                    Applied: {new Date(app.date_applied).toLocaleDateString()}
+                  </div>
 
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedApplication(app);
-                      setShowReminderModal(true);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-black/5 hover:bg-black/10 text-xs font-medium transition-colors"
-                  >
-                    <Bell size={14} />
-                    Set Reminder
-                  </button>
-                  {app.resumeData && (
+                  {/* Actions */}
+                  <div className="flex gap-2">
                     <button
                       onClick={() => {
                         setSelectedApplication(app);
-                        setShowResumeModal(true);
+                        setShowReminderModal(true);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-black text-white hover:opacity-90 text-xs font-medium transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-black/5 hover:bg-black/10 text-xs font-medium transition-colors"
                     >
-                      <Eye size={14} />
-                      View Resume
+                      <Bell size={14} />
+                      {notification ? 'Update' : 'Set'} Reminder
                     </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                    {app.resumeData && (
+                      <button
+                        onClick={() => {
+                          setSelectedApplication(app);
+                          setShowResumeModal(true);
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-black text-white hover:opacity-90 text-xs font-medium transition-all"
+                      >
+                        <Eye size={14} />
+                        View Resume
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
 
@@ -328,7 +469,7 @@ export default function ApplicationsPage() {
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
-                  <h2 className="text-xl font-bold">Resume for {selectedApplication.company}</h2>
+                  <h2 className="text-xl font-bold">Resume for {selectedApplication.company_name}</h2>
                   <p className="text-sm text-gray-500">{selectedApplication.position}</p>
                 </div>
                 <button
@@ -450,7 +591,7 @@ export default function ApplicationsPage() {
 
               <div className="mb-6">
                 <p className="text-sm text-gray-600 mb-4">
-                  Set a reminder for <span className="font-semibold">{selectedApplication.company}</span> - {selectedApplication.position}
+                  Set a reminder for <span className="font-semibold">{selectedApplication.company_name}</span> - {selectedApplication.position}
                 </p>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

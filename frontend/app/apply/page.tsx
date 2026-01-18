@@ -21,9 +21,117 @@ export default function JobDetailPage() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [stages, setStages] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
-  // Resume form state
+  useEffect(() => {
+  const fetchStages = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/stages`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stages');
+      }
+      
+      const result = await response.json();
+      setStages(result.data || []);
+    } catch (error) {
+      console.error('Error fetching stages:', error);
+    }
+  };
+  
+  fetchStages();
+}, []);
+
+// Handle apply button click
+const handleApply = async () => {
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  if (!user?.id) {
+    alert('Please log in to apply for this job');
+    router.push('/login');
+    return;
+  }
+
+  if (!job) {
+    alert('Job information not found');
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const resumeData = {
+      user_id: user.id,
+      name: `${job.Company} - ${job.Title}`,
+      data: {
+        contactInfo,
+        summary,
+        experiences,
+        education,
+        skills
+      },
+      is_master: false
+    };
+
+    const resumeResponse = await fetch(`${BASE_URL}/api/resumes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(resumeData)
+    });
+
+    if (!resumeResponse.ok) {
+      throw new Error('Failed to save resume');
+    }
+
+    const resumeResult = await resumeResponse.json();
+    const resumeId = resumeResult.data?.id;
+
+    const appliedStage = stages.find(s => s.name === 'Applied');
+    
+    if (!appliedStage) {
+      throw new Error('Application stage not found');
+    }
+
+    const applicationData = {
+      user_id: user.id,
+      resume_id: resumeId,
+      company_name: job.Company,
+      position: job.Title,
+      date_applied: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      stage_id: appliedStage.id,
+      notes: `Location: ${job.Location}`
+    };
+
+    const applicationResponse = await fetch(`${BASE_URL}/api/applications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(applicationData)
+    });
+
+    if (!applicationResponse.ok) {
+      throw new Error('Failed to submit application');
+    }
+
+    const applicationResult = await applicationResponse.json();
+
+    alert('Application submitted successfully!');
+    router.push('/applications');
+    
+  } catch (error) {
+    console.error('Error submitting application:', error);
+    alert('Failed to submit application. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const [contactInfo, setContactInfo] = useState({
     fullName: "",
     email: "",
@@ -707,9 +815,11 @@ useEffect(() => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="rounded-xl bg-black px-8 py-4 text-sm font-semibold text-white hover:opacity-90 shadow-lg"
+            onClick={handleApply}
+            disabled={isSubmitting}
+            className="rounded-xl bg-black px-8 py-4 text-sm font-semibold text-white hover:opacity-90 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Apply with This Resume
+            {isSubmitting ? 'Submitting...' : 'Apply with This Resume'}
           </motion.button>
         </div>
       </section>
