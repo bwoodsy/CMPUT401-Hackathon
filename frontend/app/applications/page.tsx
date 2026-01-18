@@ -389,7 +389,7 @@ const saveNotes = async () => {
                 key={stage.id}
                 onClick={() => setSelectedStage(stage.name)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
-                  selectedStage === stage.id
+                  selectedStage === stage.name
                     ? getStageColor(stage.name) + " font-semibold"
                     : "bg-white/80 text-gray-700 border-gray-200 hover:bg-white"
                 }`}
