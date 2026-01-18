@@ -86,23 +86,52 @@ export default function ApplyPage() {
       }
     };
 
+  const handleSubmitClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    // Perform your API POST here
+    router.push("/apply/success");
+  };
+
   return (
     <motion.section
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.4, ease: "easeOut" }}
-  className="mx-auto max-w-4xl px-6 py-12"
->
-  {/* Header */}
-  <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
-    <nav className="flex gap-6 text-sm">
-      {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
-        <motion.a
-          key={link}
-          href="/"
-          className="cursor-pointer"
-          whileHover={{ scale: 1.1, color: "#ec4899" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="mx-auto max-w-4xl px-6 py-12"
+    >
+      {/* Header */}
+      <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
+        <nav className="flex gap-6 text-sm">
+          {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
+            <motion.a
+              key={link}
+              href="/"
+              className="cursor-pointer"
+              whileHover={{ scale: 1.1, color: "#ec4899" }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              {link}
+            </motion.a>
+          ))}
+          <motion.a
+            href="#"
+            className="flex items-center gap-1 cursor-pointer"
+            whileHover={{ scale: 1.1, color: "#ec4899" }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            Get started →
+          </motion.a>
+        </nav>
+
+        <motion.div
+          whileHover={{ scale: 1.1, opacity: 0.9 }}
           transition={{ type: "spring", stiffness: 300 }}
+          className="cursor-pointer"
+          onClick={() => router.push("/login")}
         >
           ← Back
         </button>
@@ -206,50 +235,62 @@ export default function ApplyPage() {
         onChange={handleResumeSelect}
         className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
       >
-        <option value="">Select a resume...</option>
-        {resumes.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.contact.firstName} {r.contact.lastName} – {r.contact.email}
-          </option>
-        ))}
-      </select>
-    </div>
+        {/* Title */}
+        <div className="mb-2">
+          <h1 className="text-4xl font-bold tracking-tight text-black">
+            Create / Edit Resume
+          </h1>
+        </div>
 
-    {/* Form Sections */}
-    <div className="space-y-6">
-      {[
-        { title: "Contact Information", rows: false },
-        { title: "Education", rows: true },
-        { title: "Work Experience", rows: true },
-        { title: "Skills and Abilities", rows: true },
-        { title: "Certifications", rows: true },
-        { title: "References", rows: true },
-      ].map((section, i) => (
-        <section key={i} className="border-t border-gray-100 pt-4">
-          <h2 className="text-xl font-medium text-gray-900 mb-4">
-            {section.title}
-          </h2>
+        <p className="text-gray-600 font-serif mb-10">
+          Edit in the boxes with your details to generate your resume
+        </p>
 
-          {section.rows ? (
-            <textarea
-              rows={5}
-              className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
-            />
-          ) : (
+        {/* Autofill */}
+        <div className="mb-10 p-4 rounded-lg border-gray-100">
+          <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
+            Autofill from saved resume
+          </label>
+          <select
+            value={selectedResumeId}
+            onChange={handleResumeSelect}
+            className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
+          >
+            <option value="">Select a resume...</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.contact.firstName} {r.contact.lastName} – {r.contact.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Form Sections */}
+        <form className="space-y-6">
+          {/* Contact Info */}
+          <section className="border-t border-gray-100 pt-4">
+            <h2 className="text-xl font-medium text-gray-900 mb-4">
+              Contact Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
               {[
-                "First Name",
-                "Last Name",
-                "Email",
-                "Location",
-                "Phone Number",
-                "Website (optional)",
-              ].map((label) => (
-                <div key={label}>
+                "firstName",
+                "lastName",
+                "email",
+                "location",
+                "phone",
+                "website",
+              ].map((field) => (
+                <div key={field}>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
-                    {label}
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <input
+                    type="text"
+                    value={formData[field as keyof typeof formData]}
+                    onChange={(e) =>
+                      setFormData({ ...formData, [field]: e.target.value })
+                    }
                     className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black"
                   />
                 </div>
@@ -353,5 +394,33 @@ export default function ApplyPage() {
   </motion.article>
 </motion.section>
 
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
+            <p className="mt-4 text-gray-600">
+              Are you sure you want to submit this resume? You won't be able to edit
+              your details after confirming.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={handleConfirmSubmit}
+                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Confirm and Submit
+              </button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </motion.section>
   );
 }
