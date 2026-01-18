@@ -88,6 +88,8 @@ useEffect(() => {
     } catch (error) {
       console.error('Error fetching user:', error);
     }
+  });
+    return response.json();
   };
   
   getCurrentUser();
