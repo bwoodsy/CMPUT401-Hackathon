@@ -320,7 +320,7 @@ const saveNotes = async () => {
   ];
 
   const filteredApplications = selectedStage
-    ? applications.filter(app => app.stage_id === selectedStage)
+    ? applications.filter(app => app.stage_name === selectedStage)
     : applications;
 
   const getStageColor = (stageName: string) => {
@@ -387,7 +387,7 @@ const saveNotes = async () => {
             return (
               <button
                 key={stage.id}
-                onClick={() => setSelectedStage(stage.id)}
+                onClick={() => setSelectedStage(stage.name)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                   selectedStage === stage.id
                     ? getStageColor(stage.name) + " font-semibold"
