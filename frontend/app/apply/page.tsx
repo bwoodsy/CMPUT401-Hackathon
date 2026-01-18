@@ -1,9 +1,76 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+// Define the Resume type based on your resumeRoutes.js
+type Resume = {
+  id: string;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    location: string;
+    phone: string;
+    website?: string;
+  };
+  education: string;
+  experience: string;
+  skills: string;
+  certifications: string;
+  references: string;
+};
 
 export default function ApplyPage() {
   const router = useRouter();
+  const [resumes, setResumes] = useState<Resume[]>([]);
+    const [selectedResumeId, setSelectedResumeId] = useState("");
+    
+    // Form state for autofill
+    const [formData, setFormData] = useState({
+      firstName: "",
+      lastName: "",
+      email: "",
+      location: "",
+      phone: "",
+      website: "",
+      education: "",
+      experience: "",
+      skills: "",
+      certifications: "",
+      references: "",
+    });
+  
+    // 1. Fetch resumes from your Supabase backend on mount
+    useEffect(() => {
+      fetch("http://localhost:3001/api/resumes/") // Ensure this matches your server port
+        .then((res) => res.json())
+        .then((data) => setResumes(data))
+        .catch((err) => console.error("Error fetching resumes:", err));
+    }, []);
+  
+    // 2. Handle Resume Selection and Autofill
+    const handleResumeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const id = e.target.value;
+      setSelectedResumeId(id);
+      
+      const selected = resumes.find((r) => r.id === id);
+      if (selected) {
+        console.log(selected)
+        setFormData({
+          firstName: selected.contact.firstName || "",
+          lastName: selected.contact.lastName || "",
+          email: selected.contact.email || "",
+          location: selected.contact.location || "",
+          phone: selected.contact.phone || "",
+          website: selected.contact.website || "",
+          education: selected.education || "",
+          experience: selected.experience || "",
+          skills: selected.skills || "",
+          certifications: selected.certifications || "",
+          references: selected.references || "",
+        });
+      }
+    };
 
   return (
     <section className="mx-auto max-w-4xl px-6 py-12">
@@ -29,6 +96,25 @@ export default function ApplyPage() {
         <p className="text-gray-600 font-serif mb-10">
           Edit in the boxes with your details to generate your resume
         </p>
+
+        {/* --- Dropdown Menu --- */}
+        <div className="mb-10 p-4 bg-white-50 rounded-lg border-gray-100">
+          <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
+            Autofill from saved resume
+          </label>
+          <select 
+            value={selectedResumeId}
+            onChange={handleResumeSelect}
+            className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
+          >
+            <option value="">Select a resume...</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.contact.firstName} {r.contact.lastName} - {r.contact.email}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Form Sections with Dividers */}
         <div className="space-y-6">
