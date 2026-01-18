@@ -7,6 +7,7 @@ const resumeRoutes = require('./routes/resumeRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const notificationRoutes = require('./routes/notificationsRoutes');
+const puppeteurRoutes = require('./routes/puppeteurRoutes');
 const stageRoutes = require('./routes/stageRoutes');
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -45,6 +46,7 @@ app.use('/api/resumes', resumeRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/stages', stageRoutes);
+app.use('/api/html-to-pdf', puppeteurRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
