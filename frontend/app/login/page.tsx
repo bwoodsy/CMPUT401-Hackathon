@@ -42,7 +42,7 @@ export default function LoginPage() {
     }
 
     console.log("Login successful:", data);
-    router.push("/home");
+    router.push("/");
     localStorage.setItem('accessToken', data.session.accessToken);
     localStorage.setItem('refreshToken', data.session.refreshToken);
   } catch (err: any) {

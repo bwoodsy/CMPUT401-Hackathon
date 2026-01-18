@@ -276,43 +276,40 @@ const saveNotes = async () => {
   };
 
   const setReminder = async () => {
-    if (!selectedApplication || !reminderDate || !user) {
-      return;
+  if (!selectedApplication || !reminderDate || !user) return;
+
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/notifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: user.id, // Assuming user object has an id
+        application_id: selectedApplication.id,
+        notification_date: reminderDate, // Matches the local state 'reminderDate'        
+        message: `Reminder: Follow up on your application for ${selectedApplication.position} at ${selectedApplication.company_name}`,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create notification");
     }
-    
-    try {
-      const response = await fetch(`${BASE_URL}/api/notifications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          application_id: selectedApplication.id,
-          notification_date: reminderDate,
-          message: `Follow up with ${selectedApplication.company_name} - ${selectedApplication.position}`
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create reminder');
-      }
-      
-      const result = await response.json();
-      
-      // Update local notifications state
-      setNotifications({
-        ...notifications,
-        [selectedApplication.id]: result.data
-      });
-      
-      setShowReminderModal(false);
-      setReminderDate("");
-    } catch (error) {
-      console.error('Error setting reminder:', error);
-      alert('Failed to set reminder. Please try again.');
-    }
-  };
+
+    const result = await response.json();
+    console.log("Notification set successfully:", result);
+
+    // Close the modal and reset state
+    setShowReminderModal(false);
+    setReminderDate("");
+    alert("Reminder set successfully!");
+  } catch (error) {
+    console.error("Error setting reminder:", error);
+    alert("Could not set reminder. Please try again.");
+  }
+};
 
   const MotionLink = motion(Link);
   const links = [
