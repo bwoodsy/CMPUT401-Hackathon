@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion"; // <-- import motion
+import { motion } from "framer-motion";
 
 type Job = {
   jobID: string;
