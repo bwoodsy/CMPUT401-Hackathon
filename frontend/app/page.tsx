@@ -124,66 +124,62 @@ useEffect(() => {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <h1 className="text-center font-serif text-6xl">{user ? `${user.fullName}'s` : ''} Listings</h1>
 
-        <div className="mx-auto mt-10 max-w-2xl space-y-5">
-          {loading && <p className="text-center">Loading jobs…</p>}
-          {error && <p className="text-center text-red-600">{error}</p>}
+        <div className="mx-auto mt-10 max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+  {loading && <p className="text-center col-span-full">Loading jobs…</p>}
+  {error && <p className="text-center text-red-600 col-span-full">{error}</p>}
 
-          {jobs.map((job) => (
-            <motion.article
-            key={job.jobID}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="relative w-full max-w-md rounded-xl bg-white/80 p-8 pb-14 shadow-lg backdrop-blur-md mx-auto"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-sm font-semibold">{job.Title}</h2>
-                <p className="text-xs">{job.Company}</p>
-                <p className="mt-1 text-[11px] text-gray-500">{job.Location}</p>
-              </div>
-
-              <button
-                className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
-                onClick={() => router.push(`/jobs/${job.jobID}`)}
-              >
-                View role
-              </button>
-            </div>
-
-            <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
-              {job.Tags?.map((tag, index) => (
-                <Badge key={`${job.jobID}-tag-${index}`}>
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-
-            </motion.article>
-
-            
-            ))}
-
-            <motion.article
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="rounded-xl border border-dashed border-black/30 p-5 w-full max-w-md mx-auto"
-            >
-            <div className="flex justify-between gap-4">
-                <div>
-                <h2 className="text-sm font-semibold">Open application</h2>
-                <p className="mt-4 text-sm">Don't see your role? Apply anyway!</p>
-                </div>
-                <button className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">
-                Apply now
-                </button>
-            </div>
-            
-            </motion.article>
-
+  {jobs.map((job) => (
+    <motion.article
+      key={job.jobID}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="relative w-full rounded-xl bg-white/80 p-8 pb-14 shadow-lg backdrop-blur-md"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold">{job.Title}</h2>
+          <p className="text-xs">{job.Company}</p>
+          <p className="mt-1 text-[11px] text-gray-500">{job.Location}</p>
         </div>
+
+        <button
+          className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
+          onClick={() => router.push(`/jobs/${job.jobID}`)}
+        >
+          View role
+        </button>
+      </div>
+
+      <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
+        {job.Tags?.map((tag, index) => (
+          <Badge key={`${job.jobID}-tag-${index}`}>
+            {tag}
+          </Badge>
+        ))}
+      </div>
+    </motion.article>
+  ))}
+
+  <motion.article
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, ease: "easeOut" }}
+    className="rounded-xl border border-dashed border-black/30 p-5"
+  >
+    <div className="flex justify-between gap-4">
+      <div>
+        <h2 className="text-sm font-semibold">Open application</h2>
+        <p className="mt-4 text-sm">Don't see your role? Apply anyway!</p>
+      </div>
+      <button className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">
+        Apply now
+      </button>
+    </div>
+  </motion.article>
+</div>
+
       </section>
     </main>
   );
