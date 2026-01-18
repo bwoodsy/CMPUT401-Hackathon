@@ -19,7 +19,7 @@ export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [user, setUser] = useState("");
+  const [user, setUser] = useState();
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -121,7 +121,7 @@ export default function HomePage() {
 
       {/* Title */}
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-center font-serif text-6xl">{user} Listings</h1>
+        <h1 className="text-center font-serif text-6xl">Welcome {user}!</h1>
 
         <div className="mx-auto mt-10 max-w-2xl space-y-5">
           {loading && <p className="text-center">Loading jobs…</p>}
