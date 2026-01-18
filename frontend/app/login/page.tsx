@@ -43,6 +43,7 @@ export default function LoginPage() {
 
 
   return (
+    
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100">
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
