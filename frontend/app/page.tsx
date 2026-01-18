@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Bell } from "lucide-react";
 
 type Job = {
   jobID: string;
@@ -48,12 +49,20 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
       <header className="mx-auto max-w-5xl px-6 pt-6">
-        <nav className="flex gap-6 text-sm">
-          <a>Home</a>
-          <a>Resume</a>
-          <a>About</a>
-          <a>Careers</a>
-          <a className="flex items-center gap-1">Get started →</a>
+        <nav className="flex gap-6 text-sm items-center justify-between">
+          <div className="flex gap-6">
+            <button onClick={() => router.push('/')} className="hover:underline">Home</button>
+            <button onClick={() => router.push('/apply')} className="hover:underline">Resume</button>
+            <a>About</a>
+            <a>Careers</a>
+            <a className="flex items-center gap-1">Get started →</a>
+          </div>
+
+          {/* Bell button - this should be OUTSIDE the div above */}
+          <button className="relative p-2 hover:bg-black/5 rounded-full">
+            <Bell className="w-5 h-5" />
+            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+          </button>
         </nav>
       </header>
 
@@ -67,12 +76,12 @@ export default function HomePage() {
 
           {jobs.map((job) => (
             <motion.article
-                key={job.jobID}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="w-full max-w-md rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-md mx-auto"
+              key={job.jobID}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-md"
             >
                 <div className="flex items-start justify-between gap-4">
                 <div>
@@ -94,10 +103,10 @@ export default function HomePage() {
             ))}
 
             <motion.article
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="rounded-xl border border-dashed border-black/30 p-5 w-full max-w-md mx-auto"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="rounded-xl border border-dashed border-black/30 p-5"  // ← REMOVE max-w-md and mx-auto
             >
             <div className="flex justify-between gap-4">
                 <div>
