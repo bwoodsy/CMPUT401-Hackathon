@@ -37,6 +37,15 @@ export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+
+  const MotionLink = motion(Link);
+  const links = [
+  { label: "Home", href: "/" },
+  { label: "Resume", href: "/resume" },
+  { label: "Applications", href: "/applications" },
+  { label: "About", href: "/about" },
+  ];
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -197,6 +206,10 @@ export default function HomePage() {
       alert("Failed to mark notification as completed.");
     }
   };
+
+  getCurrentUser();
+}, []);
+
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
@@ -382,6 +395,43 @@ export default function HomePage() {
             </div>
           </motion.article>
         </div>
+
+        <button
+          className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
+          onClick={() => router.push(`/jobs/${job.jobID}`)}
+        >
+          View role
+        </button>
+      </div>
+
+      <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
+        {job.Tags?.map((tag, index) => (
+          <Badge key={`${job.jobID}-tag-${index}`}>
+            {tag}
+          </Badge>
+        ))}
+      </div>
+    </motion.article>
+  ))}
+
+  <motion.article
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, ease: "easeOut" }}
+    className="rounded-xl border border-dashed border-black/30 p-5"
+  >
+    <div className="flex justify-between gap-4">
+      <div>
+        <h2 className="text-sm font-semibold">Open application</h2>
+        <p className="mt-4 text-sm">Don't see your role? Apply anyway!</p>
+      </div>
+      <button className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">
+        Apply now
+      </button>
+    </div>
+  </motion.article>
+</div>
+
       </section>
     </main>
   );

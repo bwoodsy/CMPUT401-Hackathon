@@ -5,6 +5,7 @@ const notificationsController = require('../controllers/notificationsController'
 
 router.get('/:userId/pending', notificationsController.getPendingNotifications);
 
+
 router.get('/:userId', notificationsController.getAllNotifications);
 
 router.post('/', notificationsController.createNotification);
