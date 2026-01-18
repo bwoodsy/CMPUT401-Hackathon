@@ -1,10 +1,7 @@
 // routes/resumeRoutes.js
 const express = require('express');
-<<<<<<< Updated upstream
-=======
 const supabase = require('../config/supabase');
 const PDFDocument = require('pdfkit');
->>>>>>> Stashed changes
 const router = express.Router();
 const resumeController = require('../controllers/resumeController');
 
