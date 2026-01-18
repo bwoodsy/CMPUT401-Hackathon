@@ -67,7 +67,7 @@ const STAGE_COLORS: { [key: string]: string } = {
   'Rejected': "bg-red-100 text-red-700 border-red-200",
 };
 
-export default function ApplicationsPage() {
+export default function ApplicationsPage() {// This calculates counts based on the 'stage_name' in your Supabase data
   const router = useRouter();
   const [user, setUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
@@ -383,7 +383,7 @@ const saveNotes = async () => {
             All ({applications.length})
           </button>
           {stages.map((stage) => {
-            const count = applications.filter(app => app.stage_id === stage.id).length;
+            const count = applications.filter(app => app.stage_name === stage.name).length;
             return (
               <button
                 key={stage.id}
