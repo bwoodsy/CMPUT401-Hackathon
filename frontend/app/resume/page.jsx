@@ -5,6 +5,7 @@ import { CircleUser, Plus, Trash2, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Footer } from "./components/Footer";
 
 export default function MasterResumePage() {
   const router = useRouter();

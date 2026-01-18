@@ -6,6 +6,7 @@ import { CircleUser } from "lucide-react";
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link";
 
+
 type Job = {
   jobID: string;
   Title: string;
