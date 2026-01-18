@@ -277,7 +277,7 @@ export default function HomePage() {
 
               {!notifLoading && !notifError && visibleNotifications.length === 0 && (
                 <p className="p-4 text-sm text-gray-600">
-                  No due reminders right now 🎉
+                  No due reminders right now 
                   <br />
                   <span className="text-xs text-gray-500">
                     Reminders appear on/after their date until completed.
