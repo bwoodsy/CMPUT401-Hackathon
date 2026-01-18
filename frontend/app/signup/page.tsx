@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { CircleUser } from "lucide-react";
+import Link from "next/link";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,14 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  const MotionLink = motion(Link);
+  const links = [
+  { label: "← Back to listings", href: "/" },
+  { label: "Resume", href: "/resume" },
+  { label: "Applications", href: "/applications" },
+  { label: "About", href: "/about" },
+  ];
 
   const router = useRouter();
 
@@ -44,7 +53,7 @@ export default function SignupPage() {
     }
 
     console.log("Signup successful:", data);
-    router.push("/home");
+    router.push("/");
     // redirect or save token here
   } catch (err: any) {
     setError(err.message);
@@ -55,31 +64,25 @@ export default function SignupPage() {
 
 
 
+
+
   return (
     <>
     <header className="mx-auto max-w-5xl px-6 pt-6 flex items-center justify-between">
-      <nav className="flex gap-6 text-sm">
-        {[ "← Back to listings", "Resume", "About", "Careers"].map((link) => (
-          <motion.a
-            key={link}
-            href="/"
-            className="cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }} // pink-500
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            {link}
-          </motion.a>
-        ))}
-
-        <motion.a
-          href="#"
-          className="flex items-center gap-1 cursor-pointer"
+      <nav className="flex gap-6">
+      {links.map(({ label, href }) => (
+        <MotionLink
+          key={label}
+          href={href}
+          className="cursor-pointer"
           whileHover={{ scale: 1.1, color: "#ec4899" }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          Get started →
-        </motion.a>
-      </nav>
+          {label}
+        </MotionLink>
+      ))}
+    </nav>
+      
 
       <motion.div
         whileHover={{ scale: 1.1, opacity: 0.9 }}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
+import Link from "next/link";
 
 type Job = {
   jobID: string;
@@ -32,34 +33,34 @@ export default function JobDetailPage() {
 
   if (loading) return <div>Loading...</div>;
   if (!job) return <div>Job not found</div>;
+
+  const MotionLink = motion(Link);
+  const links = [
+  { label: "← Back to listings", href: "/" },
+  { label: "Resume", href: "/resume" },
+  { label: "Applications", href: "/applications" },
+  { label: "About", href: "/about" },
+  ];
   
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black flex flex-col">
       {/* Header */}
       <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
-      <nav className="flex gap-6 text-sm">
-        {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
-          <motion.a
-            key={link}
-            href="/"
-            className="cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            {link}
-          </motion.a>
-        ))}
-
-        <motion.a
-          href="#"
-          className="flex items-center gap-1 cursor-pointer"
+        <nav className="flex gap-6">
+      {links.map(({ label, href }) => (
+        <MotionLink
+          key={label}
+          href={href}
+          className="cursor-pointer"
           whileHover={{ scale: 1.1, color: "#ec4899" }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          Get started →
-        </motion.a>
-      </nav>
+          {label}
+        </MotionLink>
+      ))}
+    </nav>
+      
 
       <motion.div
         whileHover={{ scale: 1.1, opacity: 0.9 }}
@@ -99,7 +100,7 @@ export default function JobDetailPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <button
-                  onClick={() => router.push("/apply")}
+                   onClick={() => {router.push(`/apply?jobID=${job.jobID}`)}}
                   className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
                 >
                   Apply now
@@ -122,3 +123,4 @@ export default function JobDetailPage() {
     </main>
   );
 }
+
