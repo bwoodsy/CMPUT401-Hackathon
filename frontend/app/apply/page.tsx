@@ -1,138 +1,269 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
-import { Badge } from "@/components/ui/badge"
 
-type Job = {
-  jobID: string;
-  Title: string;
-  Company: string;
-  Location: string;
-  Description: string;
+type Resume = {
+  id: string;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    location: string;
+    phone: string;
+    website?: string;
+  };
+  education: string;
+  experience: string;
+  skills: string;
+  certifications: string;
+  references: string;
 };
 
+export default function ApplyPage() {
+  const router = useRouter();
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [selectedResumeId, setSelectedResumeId] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    location: "",
+    phone: "",
+    website: "",
+    education: "",
+    experience: "",
+    skills: "",
+    certifications: "",
+    references: "",
+  });
 
-export default function JobDetailPage() {
-    const router = useRouter();
-  const params = useParams();
-  const [job, setJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  // Fetch saved resumes
   useEffect(() => {
-    fetch(`http://localhost:3001/api/jobs/${params.jobID}`)
+    fetch("http://localhost:3001/api/resumes/")
       .then((res) => res.json())
-      .then((data) => {
-        setJob(data);
-        setLoading(false);
-      });
-  }, [params.jobID]);
+      .then((data) => setResumes(data))
+      .catch((err) => console.error("Error fetching resumes:", err));
+  }, []);
 
-  if (loading) return <div>Loading...</div>;
-  if (!job) return <div>Job not found</div>;
-  
+  // Autofill form when a resume is selected
+  const handleResumeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setSelectedResumeId(id);
+    const selected = resumes.find((r) => r.id === id);
+    if (selected) {
+      setFormData({
+        firstName: selected.contact.firstName || "",
+        lastName: selected.contact.lastName || "",
+        email: selected.contact.email || "",
+        location: selected.contact.location || "",
+        phone: selected.contact.phone || "",
+        website: selected.contact.website || "",
+        education: selected.education || "",
+        experience: selected.experience || "",
+        skills: selected.skills || "",
+        certifications: selected.certifications || "",
+        references: selected.references || "",
+      });
+    }
+  };
+
+  // Show confirmation modal
+  const handleSubmitClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+
+  // Confirm submission
+  const handleConfirmSubmit = () => {
+    // Here you can perform your POST API call
+    router.push("/apply/success");
+  };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black flex flex-col">
+    <motion.section
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="mx-auto max-w-4xl px-6 py-12"
+    >
       {/* Header */}
       <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
-      <nav className="flex gap-6 text-sm">
-        {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
+        <nav className="flex gap-6 text-sm">
+          {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
+            <motion.a
+              key={link}
+              href="/"
+              className="cursor-pointer"
+              whileHover={{ scale: 1.1, color: "#ec4899" }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              {link}
+            </motion.a>
+          ))}
           <motion.a
-            key={link}
-            href="/"
-            className="cursor-pointer"
+            href="#"
+            className="flex items-center gap-1 cursor-pointer"
             whileHover={{ scale: 1.1, color: "#ec4899" }}
             transition={{ type: "spring", stiffness: 300 }}
           >
-            {link}
+            Get started →
           </motion.a>
-        ))}
+        </nav>
 
-        <motion.a
-          href="#"
-          className="flex items-center gap-1 cursor-pointer"
-          whileHover={{ scale: 1.1, color: "#ec4899" }}
+        <motion.div
+          whileHover={{ scale: 1.1, opacity: 0.9 }}
           transition={{ type: "spring", stiffness: 300 }}
+          className="cursor-pointer"
+          onClick={() => router.push("/login")}
         >
-          Get started →
-        </motion.a>
-      </nav>
+          <CircleUser />
+        </motion.div>
+      </header>
 
-      <motion.div
-        whileHover={{ scale: 1.1, opacity: 0.9 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="cursor-pointer"
-        onClick={() => router.push("/login")}
+      {/* Main Card */}
+      <motion.article
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{
+          scale: 1.02,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+        }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="rounded-2xl bg-white/80 p-12 shadow-lg border border-gray-50/50 mt-12"
       >
-        <CircleUser />
-      </motion.div>
-    </header>
+        {/* Title */}
+        <div className="mb-2">
+          <h1 className="text-4xl font-bold tracking-tight text-black">
+            Create / Edit Resume
+          </h1>
+        </div>
 
-      {/* Content */}
-      <section className="mx-auto max-w-5xl px-6 py-12 flex-1">
-        {loading && <p className="text-center">Loading job details…</p>}
+        <p className="text-gray-600 font-serif mb-10">
+          Edit in the boxes with your details to generate your resume
+        </p>
 
-        {!loading && job && (
-          <motion.article
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={{ scale: 1.02, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="rounded-xl bg-white/80 p-12 shadow-lg mx-auto max-w-3xl"
+        {/* Autofill */}
+        <div className="mb-10 p-4 rounded-lg border border-gray-100">
+          <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
+            Autofill from saved resume
+          </label>
+          <select
+            value={selectedResumeId}
+            onChange={handleResumeSelect}
+            className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
           >
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-5xl font-serif font-bold">{job.Title}</h1>
-                <p className="text-2xl mt-3 text-gray-700">{job.Company}</p>
-                <p className="mt-2 text-lg text-gray-500">{job.Location}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-              {job.Tags?.map((tag, index) => (
-                <Badge key={`${job.jobID}-tag-${index}`}>
-                  {tag}
-                </Badge>
-              ))}
+            <option value="">Select a resume...</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.contact.firstName} {r.contact.lastName} – {r.contact.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Form Sections */}
+        <form className="space-y-6" onSubmit={handleSubmitClick}>
+          {/* Contact Info */}
+          <section className="border-t border-gray-100 pt-4">
+            <h2 className="text-xl font-medium text-gray-900 mb-4">
+              Contact Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
+              {[
+                "firstName",
+                "lastName",
+                "email",
+                "location",
+                "phone",
+                "website",
+              ].map((field) => (
+                <div key={field}>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData[field as keyof typeof formData]}
+                    onChange={(e) =>
+                      setFormData({ ...formData, [field]: e.target.value })
+                    }
+                    className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black"
+                  />
                 </div>
-              </div>
-              
-
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-xl font-semibold mb-3">Job Description</h2>
-                <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
-                  {job.Description}
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                <button
-                  onClick={() => {
-                    if (localStorage.getItem('accessToken')){
-                    router.push("/apply")}
-                  else{
-                    router.push("/signup")
-                  }}}
-                  className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
-                >
-                  Apply now
-                </button>
-                <button
-                  onClick={() => router.push("/")}
-                  className="rounded-md border border-black px-8 py-3 text-sm font-semibold hover:bg-black/5"
-                >
-                  Back to listings
-                </button>
-              </div>
+              ))}
             </div>
-          </motion.article>
-        )}
+          </section>
 
-        {!loading && !job && (
-          <p className="text-center text-red-600">Job not found</p>
-        )}
-      </section>
-    </main>
+          {/* Other Sections */}
+          {[
+            { title: "Education", field: "education" },
+            { title: "Work Experience", field: "experience" },
+            { title: "Skills and Abilities", field: "skills" },
+            { title: "Certifications", field: "certifications" },
+            { title: "References", field: "references" },
+          ].map((section) => (
+            <section
+              key={section.field}
+              className="border-t border-gray-100 pt-4"
+            >
+              <h2 className="text-xl font-medium text-gray-900 mb-4">
+                {section.title}
+              </h2>
+              <textarea
+                rows={5}
+                value={formData[section.field as keyof typeof formData]}
+                onChange={(e) =>
+                  setFormData({ ...formData, [section.field]: e.target.value })
+                }
+                className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
+              />
+            </section>
+          ))}
+
+          {/* Submit Button */}
+          <motion.button
+            type="submit"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+            className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
+          >
+            Submit
+          </motion.button>
+        </form>
+      </motion.article>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
+            <p className="mt-4 text-gray-600">
+              Are you sure you want to submit this resume? You won't be able to edit
+              your details after confirming.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-3">
+              <button
+                onClick={handleConfirmSubmit}
+                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Confirm and Submit
+              </button>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </motion.section>
   );
 }
