@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const auth = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -31,9 +33,12 @@ export default function LoginPage() {
       throw new Error(data.message || "Login failed");
     }
 
-    console.log("Login successful:", data);
-    router.push("/home");
-    // redirect or save token here
+    auth.login(data.session.access_token, {
+      id: data.user.id,
+      email: data.user.email,
+      fullName: data.user.user_metadata?.full_name || "",
+    });
+    router.push("/");
   } catch (err: any) {
     setError(err.message);
   } finally {

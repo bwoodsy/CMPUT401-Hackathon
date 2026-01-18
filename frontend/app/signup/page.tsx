@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const auth = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -27,8 +29,6 @@ export default function SignupPage() {
       fullName: fullName.trim(),
     };
 
-    console.log("Sending signup request:", payload);
-
     const res = await fetch(`${BASE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -38,13 +38,15 @@ export default function SignupPage() {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error("Signup failed:", data);
       throw new Error(data.message || "Signup failed");
     }
 
-    console.log("Signup successful:", data);
-    router.push("/home");
-    // redirect or save token here
+    auth.login(data.session.access_token, {
+      id: data.user.id,
+      email: data.user.email,
+      fullName: data.user.user_metadata?.full_name || fullName,
+    });
+    router.push("/");
   } catch (err: any) {
     setError(err.message);
   } finally {

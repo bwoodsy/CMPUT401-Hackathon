@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
         const { data, error } = await supabase
             .from('users')
             .select('*')
-            .eq('id', userID)
+            .eq('id', id)
             .single();
 
         // Check if Supabase returned an error
