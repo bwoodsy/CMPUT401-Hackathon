@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { CircleUser } from "lucide-react";
 
 type Job = {
   jobID: string;
@@ -32,18 +34,40 @@ export default function JobDetailPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
-      <header className="mx-auto max-w-5xl px-6 pt-6">
-        <nav className="flex gap-6 text-sm">
-          <button onClick={() => router.push('/')} className="hover:underline">← Back to listings</button>
-          <a>Product</a>
-          <a>Journal</a>
-          <a>About</a>
-          <a>Careers</a>
-          <a className="flex items-center gap-1">
-            Get started →
-          </a>
-        </nav>
-      </header>
+      <header className="mx-auto max-w-5xl px-6 pt-6 flex items-center justify-between">
+      <nav className="flex gap-6 text-sm">
+        {[ "← Back to listings", "Resume", "About", "Careers"].map((link) => (
+          <motion.a
+            key={link}
+            href="/"
+            className="cursor-pointer"
+            whileHover={{ scale: 1.1, color: "#ec4899" }} // pink-500
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            {link}
+          </motion.a>
+        ))}
+
+        <motion.a
+          href="#"
+          className="flex items-center gap-1 cursor-pointer"
+          whileHover={{ scale: 1.1, color: "#ec4899" }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          Get started →
+        </motion.a>
+      </nav>
+
+      <motion.div
+        whileHover={{ scale: 1.1, opacity: 0.9 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="cursor-pointer"
+        onClick={() => router.push("/login")}
+      >
+        <CircleUser />
+      </motion.div>
+    </header>
+
 
       {/* Content */}
       <section className="mx-auto max-w-5xl px-6 py-12">
