@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
-import { Badge } from "@/components/ui/badge"
 
 type Job = {
   jobID: string;
@@ -89,15 +88,7 @@ export default function JobDetailPage() {
                 <h1 className="text-5xl font-serif font-bold">{job.Title}</h1>
                 <p className="text-2xl mt-3 text-gray-700">{job.Company}</p>
                 <p className="mt-2 text-lg text-gray-500">{job.Location}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-              {job.Tags?.map((tag, index) => (
-                <Badge key={`${job.jobID}-tag-${index}`}>
-                  {tag}
-                </Badge>
-              ))}
-                </div>
               </div>
-              
 
               <div className="border-t border-gray-200 pt-6">
                 <h2 className="text-xl font-semibold mb-3">Job Description</h2>
@@ -108,12 +99,7 @@ export default function JobDetailPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 <button
-                  onClick={() => {
-                    if (localStorage.getItem('accessToken')){
-                    router.push("/apply")}
-                  else{
-                    router.push("/signup")
-                  }}}
+                  onClick={() => router.push("/apply")}
                   className="rounded-md bg-black px-8 py-3 text-sm font-semibold text-white hover:opacity-90"
                 >
                   Apply now

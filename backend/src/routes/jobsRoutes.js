@@ -52,11 +52,11 @@ router.get('/:jobID', async (req , res) => {
 
 router.post('/', async (req, res) => {
     try{
-        const { Title, Description, Location, Company, Tags } = req.body;
+        const { Title, Description, Location, Company } = req.body;
 
         const { data, error } = await supabase
             .from('jobs')
-            .insert([{ Title, Description, Location, Company, Tags}])
+            .insert([{ Title, Description, Location, Company}])
             .select();
 
         if (error) {
@@ -104,7 +104,6 @@ router.put('/:jobID', async (req, res) => {
         if (req.body.Company !== undefined) allowedUpdates.Company = req.body.Company;
         if (req.body.Location !== undefined) allowedUpdates.Location = req.body.Location;
         if (req.body.Description !== undefined) allowedUpdates.Description = req.body.Description;
-        if (req.body.Tags !== undefined) allowedUpdates.Tags = req.body.Tags;
 
         // If nothing to update, return early
         if (Object.keys(allowedUpdates).length === 0) {
