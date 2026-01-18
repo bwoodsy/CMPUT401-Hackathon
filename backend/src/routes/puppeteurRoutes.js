@@ -23,7 +23,7 @@ router.post("/", async (req, res) => {
 
     await browser.close();
 
-    // ✅ Set headers before sending raw buffer
+    // Set headers before sending raw buffer
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
     );
     res.setHeader("Content-Length", pdfBuffer.length);
 
-    // ✅ Send raw PDF
+    // Send raw PDF
     res.end(pdfBuffer); // use res.end instead of res.send to be safe
   } catch (err) {
     console.error("PDF generation failed:", err);
