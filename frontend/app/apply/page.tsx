@@ -22,6 +22,26 @@ type Resume = {
   references: string;
 };
 
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+
+type Resume = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  location: string;
+  phone: string;
+  website: string;
+  education: string;
+  experience: string;
+  skills: string;
+  certifications: string;
+  references: string;
+};
+
 export default function ApplyPage() {
   const router = useRouter();
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -117,6 +137,146 @@ export default function ApplyPage() {
     // Here you can perform your POST API call
     router.push("/apply/success");
   };
+
+  const router = useRouter();
+  const { user, getAuthHeader, isLoading } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [resumeId, setResumeId] = useState<string | null>(null);
+  const [resume, setResume] = useState<Resume>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    location: "",
+    phone: "",
+    website: "",
+    education: "",
+    experience: "",
+    skills: "",
+    certifications: "",
+    references: "",
+  });
+
+  useEffect(() => {
+    const loadResume = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const res = await fetch(`${BASE_URL}/api/resumes/user/${user.id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !data.error) {
+            const contact = JSON.parse(data.contact || "{}");
+            setResume({
+              firstName: contact.firstName || "",
+              lastName: contact.lastName || "",
+              email: contact.email || "",
+              location: contact.location || "",
+              phone: contact.phone || "",
+              website: contact.website || "",
+              education: data.education || "",
+              experience: data.experience || "",
+              skills: data.skills || "",
+              certifications: data.certifications || "",
+              references: data.references || "",
+            });
+            setResumeId(data.id);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading resume:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!isLoading) {
+      loadResume();
+    }
+  }, [user, isLoading, getAuthHeader]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setResume({
+      ...resume,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const url = resumeId
+        ? `${BASE_URL}/api/resumes/${resumeId}`
+        : `${BASE_URL}/api/resumes`;
+      const method = resumeId ? "PUT" : "POST";
+
+      const body = {
+        ...resume,
+        user_id: user?.id,
+      };
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (!resumeId && data[0]?.id) {
+          setResumeId(data[0].id);
+        }
+        alert("Resume saved!");
+      } else {
+        alert("Failed to save resume");
+      }
+    } catch (error) {
+      console.error("Error saving resume:", error);
+      alert("Failed to save resume");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading || loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 flex items-center justify-center">
+        <p className="text-black">Loading...</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-black mb-4">Please log in to create or edit your resume.</p>
+          <button
+            onClick={() => router.push("/login")}
+            className="bg-black text-white px-6 py-2 rounded-md hover:opacity-90"
+          >
+            Go to Login
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <motion.section

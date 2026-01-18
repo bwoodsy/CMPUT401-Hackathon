@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
 import { Badge } from "@/components/ui/badge"
+import { Bell } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type Job = {
   jobID: string;
@@ -14,11 +16,28 @@ type Job = {
   "Applied Users": { id: string }[] | null;
 };
 
+type Notification = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  job_id: string | null;
+  created_at: string;
+};
+
 export default function HomePage() {
   const router = useRouter();
+  const { user, getAuthHeader, logout } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -56,6 +75,94 @@ export default function HomePage() {
     }
   });
     return response.json();
+  };
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.id) return;
+
+      try {
+        const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const res = await fetch(`${BASE_URL}/api/notifications/user/${user.id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
+
+    fetchNotifications();
+  }, [user, getAuthHeader]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMarkAsRead = async (notifId: string) => {
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await fetch(`${BASE_URL}/api/notifications/${notifId}/read`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      });
+
+      setNotifications(notifs =>
+        notifs.map(n => (n.id === notifId ? { ...n, read: true } : n))
+      );
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!user?.id) return;
+
+    try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await fetch(`${BASE_URL}/api/notifications/user/${user.id}/read-all`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+      });
+
+      setNotifications(notifs => notifs.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Error marking all notifications as read:", err);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
   };
 
   return (
@@ -99,8 +206,14 @@ export default function HomePage() {
       <section className="mx-auto max-w-5xl px-6 py-12">
         <h1 className="text-center font-serif text-6xl">Career Listings</h1>
 
+        {user && (
+          <p className="text-center text-gray-600 mt-2">
+            Welcome, {user.fullName || user.email}
+          </p>
+        )}
+
         <div className="mx-auto mt-10 max-w-2xl space-y-5">
-          {loading && <p className="text-center">Loading jobs…</p>}
+          {loading && <p className="text-center">Loading jobs...</p>}
           {error && <p className="text-center text-red-600">{error}</p>}
 
           {jobs.map((job) => (
@@ -138,22 +251,22 @@ export default function HomePage() {
             </motion.article>
 
             
-            ))}
+          ))}
 
-            <motion.article
+          <motion.article
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="rounded-xl border border-dashed border-black/30 p-5 w-full max-w-md mx-auto"
-            >
+            className="rounded-xl border border-dashed border-black/30 p-5"
+          >
             <div className="flex justify-between gap-4">
-                <div>
+              <div>
                 <h2 className="text-sm font-semibold">Open application</h2>
                 <p className="mt-4 text-sm">Don't see your role? Apply anyway!</p>
                 </div>
                 <button className="h-9 rounded-md bg-black px-4 text-xs font-semibold text-white">
                 Apply now
-                </button>
+              </button>
             </div>
             
             </motion.article>

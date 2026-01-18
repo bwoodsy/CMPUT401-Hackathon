@@ -45,30 +45,60 @@ router.get('/:id', async (req , res) => {
     return res.json(data);
 
   } catch (error) {
-    console.error('Error fetching resumess:', error);
+    console.error('Error fetching resumes:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-router.post('/', async (req, res) => {
-    try{
-        const { contact, education, experience, skills, certifications, references } = req.body;
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
 
         const { data, error } = await supabase
             .from('resume')
-            .insert([{ contact, education, experience, skills, certifications, references}])
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({ error: 'Resume not found for this user' });
+            }
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.json(data);
+    } catch (error) {
+        console.error('Error fetching user resume:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const {
+            firstName, lastName, email, phone, location, website,
+            education, experience, skills, certifications, references,
+            user_id
+        } = req.body;
+
+        const contact = JSON.stringify({ firstName, lastName, email, phone, location, website });
+
+        const { data, error } = await supabase
+            .from('resume')
+            .insert([{ contact, education, experience, skills, certifications, references, user_id }])
             .select();
 
         if (error) {
-            return res.status(500).json({error: error.message})
+            return res.status(500).json({ error: error.message });
         }
 
         return res.status(201).json(data);
-
     } catch (error) {
         console.error('Error creating resume:', error);
-        res.status(500).json({error: 'Internal Server Error'});
-}});
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 router.delete('/:id', async (req, res) => {
     try {
@@ -98,17 +128,26 @@ router.delete('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const id = req.params.id;
+        const {
+            firstName, lastName, email, phone, location, website,
+            education, experience, skills, certifications, references
+        } = req.body;
 
         const allowedUpdates = {};
-        if (req.body.contact !== undefined) allowedUpdates.contact = req.body.contact;
-        if (req.body.education !== undefined) allowedUpdates.education = req.body.education;
-        if (req.body.experience !== undefined) allowedUpdates.experience = req.body.experience;
-        if (req.body.skills !== undefined) allowedUpdates.skills = req.body.skills;
-        if (req.body.certifications !== undefined) allowedUpdates.certifications = req.body.certifications;
-        if (req.body.references !== undefined) allowedUpdates.references = req.body.references;
 
+        // Build contact JSON if any contact field is provided
+        const contactFields = { firstName, lastName, email, phone, location, website };
+        const hasContactField = Object.values(contactFields).some(v => v !== undefined);
+        if (hasContactField) {
+            allowedUpdates.contact = JSON.stringify(contactFields);
+        }
 
-        // If nothing to update, return early
+        if (education !== undefined) allowedUpdates.education = education;
+        if (experience !== undefined) allowedUpdates.experience = experience;
+        if (skills !== undefined) allowedUpdates.skills = skills;
+        if (certifications !== undefined) allowedUpdates.certifications = certifications;
+        if (references !== undefined) allowedUpdates.references = references;
+
         if (Object.keys(allowedUpdates).length === 0) {
             return res.status(400).json({ error: 'No valid fields to update' });
         }
@@ -124,13 +163,13 @@ router.put('/:id', async (req, res) => {
         }
 
         if (!data || data.length === 0) {
-            return res.status(404).json({error: 'resume not found'});
+            return res.status(404).json({ error: 'Resume not found' });
         }
         return res.json(data);
-
     } catch (error) {
         console.error('Error updating resume:', error);
         res.status(500).json({ error: 'Internal Server Error' });
-}});
+    }
+});
 
 module.exports = router;
