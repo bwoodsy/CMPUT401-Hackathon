@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -41,6 +42,7 @@ export default function ApplyPage() {
     references: "",
   });
 
+  // Fetch saved resumes
   useEffect(() => {
     fetch("http://localhost:3001/api/resumes/")
       .then((res) => res.json())
@@ -48,6 +50,7 @@ export default function ApplyPage() {
       .catch((err) => console.error("Error fetching resumes:", err));
   }, []);
 
+  // Autofill form when a resume is selected
   const handleResumeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
     setSelectedResumeId(id);
@@ -69,23 +72,15 @@ export default function ApplyPage() {
     }
   };
 
+  // Show confirmation modal
   const handleSubmitClick = (e: React.FormEvent) => {
     e.preventDefault();
     setIsModalOpen(true);
   };
 
+  // Confirm submission
   const handleConfirmSubmit = () => {
-    // Perform your API POST here
-    router.push("/apply/success");
-  };
-
-  const handleSubmitClick = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmSubmit = () => {
-    // Perform your API POST here
+    // Here you can perform your POST API call
     router.push("/apply/success");
   };
 
@@ -153,7 +148,7 @@ export default function ApplyPage() {
         </p>
 
         {/* Autofill */}
-        <div className="mb-10 p-4 rounded-lg border-gray-100">
+        <div className="mb-10 p-4 rounded-lg border border-gray-100">
           <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
             Autofill from saved resume
           </label>
@@ -172,7 +167,7 @@ export default function ApplyPage() {
         </div>
 
         {/* Form Sections */}
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmitClick}>
           {/* Contact Info */}
           <section className="border-t border-gray-100 pt-4">
             <h2 className="text-xl font-medium text-gray-900 mb-4">
@@ -212,7 +207,10 @@ export default function ApplyPage() {
             { title: "Certifications", field: "certifications" },
             { title: "References", field: "references" },
           ].map((section) => (
-            <section key={section.field} className="border-t border-gray-100 pt-4">
+            <section
+              key={section.field}
+              className="border-t border-gray-100 pt-4"
+            >
               <h2 className="text-xl font-medium text-gray-900 mb-4">
                 {section.title}
               </h2>
@@ -230,7 +228,6 @@ export default function ApplyPage() {
           {/* Submit Button */}
           <motion.button
             type="submit"
-            onClick={handleSubmitClick}
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
             className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
@@ -239,50 +236,6 @@ export default function ApplyPage() {
           </motion.button>
         </form>
       </motion.article>
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
-            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
-            <p className="mt-4 text-gray-600">
-              Are you sure you want to submit this resume? You won't be able to edit
-              your details after confirming.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3">
-              <button
-                onClick={handleConfirmSubmit}
-                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
-              >
-                Confirm and Submit
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-              >
-                Go back
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </section>
-          )}
-        </section>
-      ))}
-
-      {/* Submit Button at the Bottom */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: "spring", stiffness: 300 }}
-        className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
-      >
-        Submit
-      </motion.button>
-    </div>
-  </motion.article>
-</motion.section>
 
       {/* Modal */}
       {isModalOpen && (
