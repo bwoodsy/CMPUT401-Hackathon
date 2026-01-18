@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2, PlusCircle } from "lucide-react";
 
 // Define the Resume type based on your resumeRoutes.js
 type Resume = {
@@ -25,6 +26,40 @@ export default function ApplyPage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedResumeId, setSelectedResumeId] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // All possible sections
+    const ALL_SECTIONS = [
+        { id: "education", label: "Education" },
+        { id: "experience", label: "Work Experience" },
+        { id: "skills", label: "Skills and Abilities" },
+        { id: "certifications", label: "Certifications" },
+        { id: "references", label: "References" },
+    ];
+
+    // Track which sections are currently visible
+    const [visibleSections, setVisibleSections] = useState([
+        "contact",
+        "education",
+        "experience",
+        "skills",
+        "certifications",
+        "references",
+    ]);
+
+    // Function to remove a section
+    const removeSection = (sectionId: string) => {
+        setVisibleSections((prev) => prev.filter((id) => id !== sectionId));
+    };
+
+    // Function to add a section back
+    const addSection = (sectionId: string) => {
+        if (!visibleSections.includes(sectionId)) {
+        setVisibleSections((prev) => [...prev, sectionId]);
+        }
+    };
+
+    // Identify which sections are currently hidden
+    const hiddenSections = ALL_SECTIONS.filter(s => !visibleSections.includes(s.id));
 
     // Function to handle the initial submit click
     const handleSubmitClick = (e: React.FormEvent) => {
@@ -162,17 +197,30 @@ export default function ApplyPage() {
           </section>
 
           {/* Education */}
-          <section className="border-t border-gray-100 pt-4">
-            <h2 className="text-xl font-medium text-gray-900 mb-4">Education</h2>
-            <textarea 
-                required
-                rows={5}
-                className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
-                placeholder="education stuff"/>  
-          </section>
+          {visibleSections.includes("education") && (
+            <section className="border-t border-gray-100 pt-4 relative group">
+                <button 
+                    onClick={() => removeSection("education")}
+                    className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
+                    <Trash2 size={18} />
+                </button>
+                <h2 className="text-xl font-medium text-gray-900 mb-4">Education</h2>
+                <textarea 
+                    required
+                    rows={5}
+                    className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
+                    placeholder="education stuff"/>  
+            </section>
+          )}
 
           {/* Work Experience */}
-          <section className="border-t border-gray-100 pt-4">
+          {visibleSections.includes("experience") && (
+          <section className="border-t border-gray-100 pt-4 relative group">
+            <button 
+                onClick={() => removeSection("experience")}
+                className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
+                <Trash2 size={18} />
+            </button>
             <h2 className="text-xl font-medium text-gray-900 mb-4">Work Experience</h2>
             <textarea 
                 required
@@ -180,9 +228,16 @@ export default function ApplyPage() {
                 className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
                 placeholder="work experience stuff"/>  
           </section>
+          )}
 
           {/* Skills and Abilities */}
-          <section className="border-t border-gray-100 pt-4">
+          {visibleSections.includes("skills") && (
+          <section className="border-t border-gray-100 pt-4 relative group">
+            <button 
+                onClick={() => removeSection("skills")}
+                className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
+                <Trash2 size={18} />
+            </button>
             <h2 className="text-xl font-medium text-gray-900 mb-4">Skills and Abilities</h2>
             <textarea 
                 required
@@ -190,9 +245,16 @@ export default function ApplyPage() {
                 className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
                 placeholder="skills stuff"/>  
           </section>
+          )}
 
           {/* Certifications */}
-          <section className="border-t border-gray-100 pt-4">
+          {visibleSections.includes("certifications") && (
+          <section className="border-t border-gray-100 pt-4 relative group">
+            <button 
+                onClick={() => removeSection("certifications")}
+                className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
+                <Trash2 size={18} />
+            </button>
             <h2 className="text-xl font-medium text-gray-900 mb-4">Certifications</h2>
             <textarea 
                 required
@@ -200,9 +262,16 @@ export default function ApplyPage() {
                 className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
                 placeholder="certifications stuff"/>  
           </section>
+          )}
 
           {/* References */}
-          <section className="border-t border-gray-100 pt-4">
+          {visibleSections.includes("references") && (
+          <section className="border-t border-gray-100 pt-4 relative group">
+            <button 
+                onClick={() => removeSection("references")}
+                className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
+                <Trash2 size={18} />
+            </button>
             <h2 className="text-xl font-medium text-gray-900 mb-4">References</h2>
             <textarea 
                 required
@@ -210,8 +279,30 @@ export default function ApplyPage() {
                 className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
                 placeholder="references stuff"/>          
             </section>
+          )}
 
         </div>
+
+        {/* --- ADD SECTION UI --- */}
+        {hiddenSections.length > 0 && (
+          <div className="mt-12 border-t border-dashed border-gray-200 pt-8">
+            <p className="text-xs font-bold uppercase text-gray-400 mb-4 tracking-widest text-center">
+              Add sections back to your resume
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {hiddenSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => addSection(section.id)}
+                  className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:border-black hover:text-black transition-colors"
+                >
+                  <PlusCircle size={14} />
+                  {section.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </article>
 
       {/* --- POPUP MODAL --- */}
@@ -226,14 +317,12 @@ export default function ApplyPage() {
             <div className="mt-8 flex flex-col gap-3">
               <button 
                 onClick={handleConfirmSubmit}
-                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
-              >
+                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90">
                 Confirm and Submit
               </button>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-              >
+                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50">
                 Go back
               </button>
             </div>
