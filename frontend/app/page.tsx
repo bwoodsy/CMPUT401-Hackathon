@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
+import { Badge } from "@/components/ui/badge"
 
 type Job = {
   jobID: string;
@@ -44,6 +45,19 @@ export default function HomePage() {
     fetchJobs();
   }, []);
 
+  //get current user data
+  const getCurrentUser = async () => {
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const token = localStorage.getItem('accessToken');
+  
+  const response = await fetch(`${BASE_URL}/api/auth/me`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+    return response.json();
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
@@ -75,7 +89,7 @@ export default function HomePage() {
         whileHover={{ scale: 1.1, opacity: 0.9 }}
         transition={{ type: "spring", stiffness: 300 }}
         className="cursor-pointer"
-        onClick={() => router.push("/home")}
+        onClick={() => router.push("/login")}
       >
         <CircleUser />
       </motion.div>
@@ -91,30 +105,39 @@ export default function HomePage() {
 
           {jobs.map((job) => (
             <motion.article
-                key={job.jobID}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="w-full max-w-md rounded-xl bg-white/80 p-8 shadow-lg backdrop-blur-md mx-auto"
-            >
-                <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h2 className="text-sm font-semibold">{job.Title}</h2>
-                    <p className="text-xs">{job.Company}</p>
-                    <p className="mt-1 text-[11px] text-gray-500">{job.Location}</p>
-                </div>
+            key={job.jobID}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.03, boxShadow: "0 10px 25px rgba(0,0,0,0.12)" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="relative w-full max-w-md rounded-xl bg-white/80 p-8 pb-14 shadow-lg backdrop-blur-md mx-auto"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold">{job.Title}</h2>
+                <p className="text-xs">{job.Company}</p>
+                <p className="mt-1 text-[11px] text-gray-500">{job.Location}</p>
+              </div>
 
-                <button
-                    className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
-                    onClick={() => router.push(`/jobs/${job.jobID}`)}
-                >
-                    View role
-                </button>
-                </div>
+              <button
+                className="h-9 shrink-0 rounded-md bg-black px-4 text-xs font-semibold text-white hover:opacity-90"
+                onClick={() => router.push(`/jobs/${job.jobID}`)}
+              >
+                View role
+              </button>
+            </div>
 
-                <p className="mt-4 text-sm text-gray-700">{job.Description}</p>
+            <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
+              {job.Tags?.map((tag, index) => (
+                <Badge key={`${job.jobID}-tag-${index}`}>
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+
             </motion.article>
+
+            
             ))}
 
             <motion.article
@@ -132,6 +155,7 @@ export default function HomePage() {
                 Apply now
                 </button>
             </div>
+            
             </motion.article>
 
         </div>
