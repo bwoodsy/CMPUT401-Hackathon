@@ -1,4 +1,5 @@
 const { supabase } = require('../config/database');
+const supabaseAdmin = require('../config/supabase');
 const { validationResult } = require('express-validator');
 
 const authController = {
@@ -29,6 +30,22 @@ const authController = {
           success: false,
           message: error.message
         });
+      }
+
+      // Also create a record in the public.users table for foreign key references
+      if (data.user) {
+        const { error: usersError } = await supabaseAdmin
+          .from('users')
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            name: fullName
+          }, { onConflict: 'id' });
+
+        if (usersError) {
+          console.error('Error creating user in public.users:', usersError);
+          // Don't fail the signup, just log the error
+        }
       }
 
       if (data.user && !data.session) {
@@ -87,6 +104,21 @@ const authController = {
           success: false,
           message: 'Invalid credentials'
         });
+      }
+
+      // Ensure user exists in public.users table (for existing users who signed up before this fix)
+      if (data.user) {
+        const { error: usersError } = await supabaseAdmin
+          .from('users')
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || ''
+          }, { onConflict: 'id' });
+
+        if (usersError) {
+          console.error('Error syncing user to public.users:', usersError);
+        }
       }
 
       res.status(200).json({

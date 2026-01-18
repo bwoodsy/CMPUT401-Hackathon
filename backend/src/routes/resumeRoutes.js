@@ -12,7 +12,7 @@ router.get('/', async (req , res) => {
     if (error) {
       return res.status(500).json({ error: error.message });
     }
-    
+
     // express returns 200 by default
     return res.json(data);
 
@@ -22,34 +22,7 @@ router.get('/', async (req , res) => {
   }
 });
 
-router.get('/:id', async (req , res) => {
-  try {
-    const id = req.params.id;
-
-    const { data, error } = await supabase
-      .from('resume')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    // Check if Supabase returned an error
-    if (error) {
-        // PGRST116 is the code for "No rows found"
-        if (error.code === 'PGRST116') {
-            return res.status(404).json({ error: 'Resume not found' });
-        }
-        return res.status(500).json({ error: error.message });
-    }
-    
-    // express returns 200 by default
-    return res.json(data);
-
-  } catch (error) {
-    console.error('Error fetching resumes:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
+// IMPORTANT: This route must come BEFORE /:id to avoid matching "user" as an id
 router.get('/user/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -74,6 +47,34 @@ router.get('/user/:userId', async (req, res) => {
     }
 });
 
+router.get('/:id', async (req , res) => {
+  try {
+    const id = req.params.id;
+
+    const { data, error } = await supabase
+      .from('resume')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    // Check if Supabase returned an error
+    if (error) {
+        // PGRST116 is the code for "No rows found"
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Resume not found' });
+        }
+        return res.status(500).json({ error: error.message });
+    }
+
+    // express returns 200 by default
+    return res.json(data);
+
+  } catch (error) {
+    console.error('Error fetching resumes:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 router.post('/', async (req, res) => {
     try {
         const {
@@ -82,14 +83,26 @@ router.post('/', async (req, res) => {
             user_id
         } = req.body;
 
+        console.log('Creating resume for user_id:', user_id);
+
         const contact = JSON.stringify({ firstName, lastName, email, phone, location, website });
+
+        const insertData = { contact, education, experience, skills, certifications, references };
+
+        // Only include user_id if it's provided
+        if (user_id) {
+            insertData.user_id = user_id;
+        }
+
+        console.log('Insert data:', insertData);
 
         const { data, error } = await supabase
             .from('resume')
-            .insert([{ contact, education, experience, skills, certifications, references, user_id }])
+            .insert([insertData])
             .select();
 
         if (error) {
+            console.error('Supabase error:', error);
             return res.status(500).json({ error: error.message });
         }
 

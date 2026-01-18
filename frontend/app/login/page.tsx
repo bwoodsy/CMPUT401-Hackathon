@@ -34,10 +34,12 @@ export default function LoginPage() {
       throw new Error(data.message || "Login failed");
     }
 
-    console.log("Login successful:", data);
-    router.push("/home");
-    localStorage.setItem('accessToken', data.session.accessToken);
-    localStorage.setItem('refreshToken', data.session.refreshToken);
+    auth.login(data.session.access_token, {
+      id: data.user.id,
+      email: data.user.email,
+      fullName: data.user.user_metadata?.full_name || "",
+    });
+    router.push("/");
   } catch (err: any) {
     setError(err.message);
   } finally {

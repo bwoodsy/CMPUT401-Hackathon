@@ -78,24 +78,30 @@ router.post('/', async (req, res) => {
     try {
         const { user_id, job_id, status, notes, job_title, company } = req.body;
 
+        console.log('Creating application:', { user_id, job_id, status });
+
         if (!user_id || !job_id) {
             return res.status(400).json({ error: 'user_id and job_id are required' });
         }
 
+        const insertData = {
+            user_id,
+            job_id,
+            status: status || 'applied',
+        };
+
+        // Only add optional fields if provided
+        if (notes) insertData.notes = notes;
+        if (job_title) insertData.job_title = job_title;
+        if (company) insertData.company = company;
+
         const { data, error } = await supabase
             .from('applications')
-            .insert([{
-                user_id,
-                job_id,
-                status: status || 'applied',
-                notes: notes || '',
-                job_title: job_title || '',
-                company: company || '',
-                applied_date: new Date().toISOString(),
-            }])
+            .insert([insertData])
             .select();
 
         if (error) {
+            console.error('Supabase error creating application:', error);
             return res.status(500).json({ error: error.message });
         }
 
