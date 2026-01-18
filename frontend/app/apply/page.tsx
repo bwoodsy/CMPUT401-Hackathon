@@ -320,11 +320,52 @@ useEffect(() => {
 
       if (!resumeData) return;
 
-      setContactInfo(resumeData.contactInfo || {});
-      setSummary(resumeData.summary || "");
-      setExperiences(resumeData.experiences || []);
-      setEducation(resumeData.education || []);
-      setSkills(resumeData.skills || []);
+      const normalized = {
+        contactInfo:
+          resumeData.contactInfo && typeof resumeData.contactInfo === "object"
+            ? {
+                fullName: resumeData.contactInfo.fullName || "",
+                email: resumeData.contactInfo.email || "",
+                phone: resumeData.contactInfo.phone || "",
+                linkedin: resumeData.contactInfo.linkedin || "",
+                portfolio: resumeData.contactInfo.portfolio || "",
+                location: resumeData.contactInfo.location || ""
+              }
+            : {
+                fullName: "",
+                email: "",
+                phone: "",
+                linkedin: "",
+                portfolio: "",
+                location: ""
+              },
+
+        summary: typeof resumeData.summary === "string" ? resumeData.summary : "",
+
+        experiences: Array.isArray(resumeData.experiences)
+          ? resumeData.experiences
+          : resumeData.experiences
+            ? [resumeData.experiences]
+            : [],
+
+        education: Array.isArray(resumeData.education)
+          ? resumeData.education
+          : resumeData.education
+            ? [resumeData.education]
+            : [],
+
+        skills: Array.isArray(resumeData.skills)
+          ? resumeData.skills.filter(s => typeof s === "string")
+          : typeof resumeData.skills === "string"
+            ? [resumeData.skills]
+            : []
+    };
+
+    setContactInfo(normalized.contactInfo);
+    setSummary(normalized.summary);
+    setExperiences(normalized.experiences);
+    setEducation(normalized.education);
+    setSkills(normalized.skills);
     } catch (err) {
       console.error(err);
     }
@@ -332,12 +373,6 @@ useEffect(() => {
 
   fetchMasterResume();
 }, [user]);
-
-
-
-  
-
-
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!job) return <div className="min-h-screen flex items-center justify-center">Job not found</div>;
