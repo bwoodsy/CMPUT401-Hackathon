@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { CircleUser, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import { CircleUser, Plus, Trash2, Eye, EyeOff, FileText } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
@@ -46,6 +46,78 @@ export default function JobDetailPage() {
   fetchStages();
 }, []);
 
+const handleExport = async () => {
+  // Grab the element you want to export (the container of your preview)
+  const element = document.querySelector("#resume-preview"); // give your container an ID
+
+  if (!element) return;
+
+  // Clone it so we don't affect the live DOM
+  const clone = element.cloneNode(true);
+
+  // Optional: remove interactive elements if any (like buttons)
+  clone.querySelectorAll("button").forEach(btn => btn.remove());
+
+  // Serialize inner HTML
+  const htmlContent = clone.innerHTML;
+
+  // Wrap in full HTML document for Puppeteer
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Resume Export</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; line-height: 1.5; margin: 0; padding: 24px; }
+          h1, h2, h3, p { margin: 0; padding: 0; }
+          .list-disc { list-style-type: disc; padding-left: 1em; }
+          .text-xs { font-size: 12px; }
+          .font-semibold { font-weight: 600; }
+          .uppercase { text-transform: uppercase; }
+          .tracking-wide { letter-spacing: 0.05em; }
+          .border-b { border-bottom: 1px solid #000; }
+          .mb-1 { margin-bottom: 0.25rem; }
+          .mb-2 { margin-bottom: 0.5rem; }
+          .mb-3 { margin-bottom: 0.75rem; }
+          .mb-6 { margin-bottom: 1.5rem; }
+          .mb-10 { margin-bottom: 2.5rem; }
+          .space-y-3 > * + * { margin-top: 0.75rem; }
+          .space-y-4 > * + * { margin-top: 1rem; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+      </body>
+    </html>
+  `;
+
+  // Send to backend Puppeteer route
+  const res = await fetch("http://localhost:3001/api/html-to-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ html })
+  });
+
+  if (!res.ok) {
+    console.error("PDF generation failed", await res.text());
+    return;
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "resume.pdf";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+
+
 // Handle apply button click
 const handleApply = async () => {
   const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -60,6 +132,8 @@ const handleApply = async () => {
     alert('Job information not found');
     return;
   }
+
+
 
   setIsSubmitting(true);
 
@@ -159,6 +233,7 @@ const handleApply = async () => {
   const [formWidth, setFormWidth] = useState(35);
   const searchParams = useSearchParams();
   const jobID = searchParams.get("jobID");
+  const previewRef = useRef(null);
   
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -192,6 +267,8 @@ const handleApply = async () => {
         setFormWidth(Math.max(10, Math.min(70, adjustedPercentage)));
       }
     };
+
+    
 
     const handleMouseUp = () => {
       setIsDragging(null);
@@ -298,6 +375,9 @@ const handleApply = async () => {
 
   getCurrentUser();
 }, []);
+
+
+
 
 useEffect(() => {
   if (!user?.id) return;
@@ -710,8 +790,9 @@ useEffect(() => {
               style={{ width: `${actualPreviewWidth}%` }}
               className="flex flex-col"
             >
-              <div className="rounded-xl bg-white p-12 shadow-2xl overflow-y-auto flex-1 ml-2"
+              <div id="resume-preview" className="rounded-xl bg-white p-12 shadow-2xl overflow-y-auto flex-1 ml-2"
                 style={{ fontFamily: "'Times New Roman', serif", lineHeight: 1.5 }}
+                
               >
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-600 mb-6">Preview</h2>
 
@@ -809,9 +890,10 @@ useEffect(() => {
             </motion.div>
           )}
         </div>
+        
 
-        {/* Apply Button */}
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center space-x-4">
+          {/* Apply Button */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -821,7 +903,20 @@ useEffect(() => {
           >
             {isSubmitting ? 'Submitting...' : 'Apply with This Resume'}
           </motion.button>
+
+          {/* Export PDF Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleExport}
+            disabled={isSubmitting}
+            className="rounded-xl bg-white px-8 py-4 text-sm font-semibold text-black hover:opacity-90 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          >
+            <FileText className="w-5 h-5 text-black" />
+            <span>{isSubmitting ? 'Submitting...' : 'Export as PDF'}</span>
+          </motion.button>
         </div>
+
       </section>
     </main>
   );
