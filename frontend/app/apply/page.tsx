@@ -1,154 +1,364 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { Trash2, PlusCircle, CircleUser } from "lucide-react";
+import { CircleUser, Plus, Trash2, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
-type Resume = {
-  id: string;
-  contact: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    location: string;
-    phone: string;
-    website?: string;
-  };
-  education: string;
-  experience: string;
-  skills: string;
-  certifications: string;
-  references: string;
+type Job = {
+  jobID: string;
+  Title: string;
+  Company: string;
+  Location: string;
+  Description: string;
 };
 
-export default function ApplyPage() {
+export default function JobDetailPage() {
   const router = useRouter();
-  const [resumes, setResumes] = useState<Resume[]>([]);
-  const [selectedResumeId, setSelectedResumeId] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const params = useParams();
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [stages, setStages] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // All possible sections
-    const ALL_SECTIONS = [
-        { id: "education", label: "Education" },
-        { id: "experience", label: "Work Experience" },
-        { id: "skills", label: "Skills and Abilities" },
-        { id: "certifications", label: "Certifications" },
-        { id: "references", label: "References" },
-    ];
 
-    // Track which sections are currently visible
-    const [visibleSections, setVisibleSections] = useState([
-        "contact",
-        "education",
-        "experience",
-        "skills",
-        "certifications",
-        "references",
-    ]);
+  useEffect(() => {
+  const fetchStages = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/stages`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch stages');
+      }
+      
+      const result = await response.json();
+      setStages(result.data || []);
+    } catch (error) {
+      console.error('Error fetching stages:', error);
+    }
+  };
+  
+  fetchStages();
+}, []);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+// Handle apply button click
+const handleApply = async () => {
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  if (!user?.id) {
+    alert('Please log in to apply for this job');
+    router.push('/login');
+    return;
+  }
+
+  if (!job) {
+    alert('Job information not found');
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const resumeData = {
+      user_id: user.id,
+      name: `${job.Company} - ${job.Title}`,
+      data: {
+        contactInfo,
+        summary,
+        experiences,
+        education,
+        skills
+      },
+      is_master: false
+    };
+
+    const resumeResponse = await fetch(`${BASE_URL}/api/resumes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(resumeData)
+    });
+
+    if (!resumeResponse.ok) {
+      throw new Error('Failed to save resume');
+    }
+
+    const resumeResult = await resumeResponse.json();
+    const resumeId = resumeResult.data?.id;
+
+    const appliedStage = stages.find(s => s.name === 'Applied');
+    
+    if (!appliedStage) {
+      throw new Error('Application stage not found');
+    }
+
+    const applicationData = {
+      user_id: user.id,
+      resume_id: resumeId,
+      company_name: job.Company,
+      position: job.Title,
+      date_applied: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      stage_id: appliedStage.id,
+      notes: `Location: ${job.Location}`
+    };
+
+    const applicationResponse = await fetch(`${BASE_URL}/api/applications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(applicationData)
+    });
+
+    if (!applicationResponse.ok) {
+      throw new Error('Failed to submit application');
+    }
+
+    const applicationResult = await applicationResponse.json();
+
+    alert('Application submitted successfully!');
+    router.push('/applications');
+    
+  } catch (error) {
+    console.error('Error submitting application:', error);
+    alert('Failed to submit application. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  const [contactInfo, setContactInfo] = useState({
+    fullName: "",
     email: "",
-    location: "",
     phone: "",
-    website: "",
-    education: "",
-    experience: "",
-    skills: "",
-    certifications: "",
-    references: "",
+    linkedin: "",
+    portfolio: "",
+    location: ""
   });
 
-  // Fetch saved resumes
-  useEffect(() => {
-    fetch("http://localhost:3001/api/resumes/")
-      .then((res) => res.json())
-      .then((data) => setResumes(data))
-      .catch((err) => console.error("Error fetching resumes:", err));
-  }, []);
+  const [summary, setSummary] = useState("");
+  const [experiences, setExperiences] = useState([
+    { company: "", title: "", startDate: "", endDate: "", description: "" }
+  ]);
+  const [education, setEducation] = useState([
+    { school: "", degree: "", field: "", graduationDate: "" }
+  ]);
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
 
-  // Autofill form when a resume is selected
-  const handleResumeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
-    setSelectedResumeId(id);
-    const selected = resumes.find((r) => r.id === id);
-    if (selected) {
-      setFormData({
-        firstName: selected.contact.firstName || "",
-        lastName: selected.contact.lastName || "",
-        email: selected.contact.email || "",
-        location: selected.contact.location || "",
-        phone: selected.contact.phone || "",
-        website: selected.contact.website || "",
-        education: selected.education || "",
-        experience: selected.experience || "",
-        skills: selected.skills || "",
-        certifications: selected.certifications || "",
-        references: selected.references || "",
+  // Layout state
+  const [showJob, setShowJob] = useState(true);
+  const [showForm, setShowForm] = useState(true);
+  const [showPreview, setShowPreview] = useState(true);
+  const [jobWidth, setJobWidth] = useState(25);
+  const [formWidth, setFormWidth] = useState(35);
+  const searchParams = useSearchParams();
+  const jobID = searchParams.get("jobID");
+  
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState<'job' | 'form' | null>(null);
+
+  useEffect(() => {
+    fetch(`http://localhost:3001/api/jobs/${jobID}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setJob(data);
+        setLoading(false);
       });
+  }, [params.jobID]);
+
+  // Handle mouse move for resizing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return;
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const relativeX = e.clientX - containerRect.left;
+      const percentage = (relativeX / containerWidth) * 100;
+
+      if (isDragging === 'job') {
+        setJobWidth(Math.max(10, Math.min(60, percentage)));
+      } else if (isDragging === 'form') {
+        const visibleCount = [showJob, showForm, showPreview].filter(Boolean).length;
+        const jobWidthActual = showJob ? jobWidth : 0;
+        const adjustedPercentage = percentage - jobWidthActual;
+        setFormWidth(Math.max(10, Math.min(70, adjustedPercentage)));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(null);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, jobWidth, showJob, showForm, showPreview]);
+
+  const MotionLink = motion(Link);
+  const links = [
+    { label: "← Back to listings", href: "/" },
+    { label: "Resume", href: "/resume" },
+    { label: "Applications", href: "/applications" },
+    { label: "About", href: "/about" },
+  ];
+
+  // Experience handlers
+  const addExperience = () => {
+    setExperiences([...experiences, { company: "", title: "", startDate: "", endDate: "", description: "" }]);
+  };
+
+  const removeExperience = (index: number) => {
+    setExperiences(experiences.filter((_, i) => i !== index));
+  };
+
+  const updateExperience = (index: number, field: string, value: string) => {
+    const updated = [...experiences];
+    updated[index][field as keyof typeof updated[0]] = value;
+    setExperiences(updated);
+  };
+
+  // Education handlers
+  const addEducation = () => {
+    setEducation([...education, { school: "", degree: "", field: "", graduationDate: "" }]);
+  };
+
+  const removeEducation = (index: number) => {
+    setEducation(education.filter((_, i) => i !== index));
+  };
+
+  const updateEducation = (index: number, field: string, value: string) => {
+    const updated = [...education];
+    updated[index][field as keyof typeof updated[0]] = value;
+    setEducation(updated);
+  };
+
+  // Skills handlers
+  const addSkill = () => {
+    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+      setSkills([...skills, skillInput.trim()]);
+      setSkillInput("");
     }
   };
 
-  // Function to remove a section
-    const removeSection = (sectionId: string) => {
-        setVisibleSections((prev) => prev.filter((id) => id !== sectionId));
-    };
+  const removeSkill = (skillToRemove: string) => {
+    setSkills(skills.filter(skill => skill !== skillToRemove));
+  };
 
-    // Function to add a section back
-    const addSection = (sectionId: string) => {
-        if (!visibleSections.includes(sectionId)) {
-        setVisibleSections((prev) => [...prev, sectionId]);
+  // Calculate actual widths based on visible cards
+  const visibleCards = [showJob, showForm, showPreview].filter(Boolean).length;
+  const getActualWidth = (cardWidth: number, isVisible: boolean) => {
+    if (!isVisible) return 0;
+    if (visibleCards === 1) return 100;
+    return cardWidth;
+  };
+
+  const actualJobWidth = getActualWidth(jobWidth, showJob);
+  const actualFormWidth = getActualWidth(formWidth, showForm);
+  const actualPreviewWidth = 100 - actualJobWidth - actualFormWidth;
+  useEffect(() => {
+  const getCurrentUser = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
         }
-    };
+        throw new Error("Failed to fetch user");
+      }
 
-    // Identify which sections are currently hidden
-    const hiddenSections = ALL_SECTIONS.filter(s => !visibleSections.includes(s.id));
-
-  // Show confirmation modal
-  const handleSubmitClick = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsModalOpen(true);
+      const data = await res.json();
+      setUser(data.user);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // Confirm submission
-  const handleConfirmSubmit = () => {
-    // Here you can perform your POST API call
-    router.push("/apply/success");
+  getCurrentUser();
+}, []);
+
+useEffect(() => {
+  if (!user?.id) return;
+
+  const fetchMasterResume = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/resumes/${user.id}/master`
+      );
+
+      if (!res.ok) {
+        if (res.status === 404) return;
+        throw new Error("Failed to fetch master resume");
+      }
+
+      const result = await res.json();
+      const resumeData = result.data?.data;
+
+      if (!resumeData) return;
+
+      setContactInfo(resumeData.contactInfo || {});
+      setSummary(resumeData.summary || "");
+      setExperiences(resumeData.experiences || []);
+      setEducation(resumeData.education || []);
+      setSkills(resumeData.skills || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  fetchMasterResume();
+}, [user]);
+
+
+
+  
+
+
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!job) return <div className="min-h-screen flex items-center justify-center">Job not found</div>;
   return (
-    <motion.section
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="mx-auto max-w-4xl px-6 py-12"
-    >
-      {/* Header */}
-      <header className="w-full max-w-5xl mx-auto px-6 pt-6 flex items-center justify-between">
-        <nav className="flex gap-6 text-sm">
-          {["← Back to listings", "Resume", "About", "Careers"].map((link) => (
-            <motion.a
-              key={link}
-              href="/"
+    <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100">
+      {/* Nav */}
+      <header className="mx-auto max-w-[98%] px-6 pt-6 flex items-center justify-between">
+        <nav className="flex gap-6">
+          {links.map(({ label, href }) => (
+            <MotionLink
+              key={label}
+              href={href}
               className="cursor-pointer"
               whileHover={{ scale: 1.1, color: "#ec4899" }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              {link}
-            </motion.a>
+              {label}
+            </MotionLink>
           ))}
-          <motion.a
-            href="#"
-            className="flex items-center gap-1 cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            Get started →
-          </motion.a>
         </nav>
-
+       
         <motion.div
           whileHover={{ scale: 1.1, opacity: 0.9 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -159,173 +369,460 @@ export default function ApplyPage() {
         </motion.div>
       </header>
 
-      {/* Main Card */}
-      <motion.article
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        whileHover={{
-          scale: 1.02,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
-        }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="rounded-2xl bg-white/80 p-12 shadow-lg border border-gray-50/50 mt-12"
-      >
-        {/* Title */}
-        <div className="mb-2">
-          <h1 className="text-4xl font-bold tracking-tight text-black">
-            Create / Edit Resume
-          </h1>
+      {/* Title and Controls */}
+      <section className="mx-auto max-w-[98%] px-6 py-8">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="font-serif text-5xl">Tailor Your Resume</h1>
+          
+          {/* Toggle visibility buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowJob(!showJob)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showJob 
+                  ? 'bg-black text-white' 
+                  : 'bg-white/80 text-gray-600 hover:bg-white'
+              }`}
+            >
+              {showJob ? <Eye size={16} /> : <EyeOff size={16} />}
+              Job
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showForm 
+                  ? 'bg-black text-white' 
+                  : 'bg-white/80 text-gray-600 hover:bg-white'
+              }`}
+            >
+              {showForm ? <Eye size={16} /> : <EyeOff size={16} />}
+              Edit
+            </button>
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showPreview 
+                  ? 'bg-black text-white' 
+                  : 'bg-white/80 text-gray-600 hover:bg-white'
+              }`}
+            >
+              {showPreview ? <Eye size={16} /> : <EyeOff size={16} />}
+              Preview
+            </button>
+          </div>
         </div>
-
-        <p className="text-gray-600 font-serif mb-10">
-          Edit in the boxes with your details to generate your resume
+        
+        <p className="text-sm text-gray-600 mb-8">
+          Customize your resume for this specific job posting
         </p>
 
-        {/* Autofill */}
-        <div className="mb-10 p-4 rounded-lg border border-gray-100">
-          <label className="block text-[10px] font-bold uppercase text-gray-500 mb-2">
-            Autofill from saved resume
-          </label>
-          <select
-            value={selectedResumeId}
-            onChange={handleResumeSelect}
-            className="w-full bg-white border border-gray-200 rounded-md p-2 text-sm outline-none focus:border-black"
-          >
-            <option value="">Select a resume...</option>
-            {resumes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.contact.firstName} {r.contact.lastName} – {r.contact.email}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Three Column Layout */}
+        <div ref={containerRef} className="flex gap-0 h-[calc(100vh-240px)] relative">
+          {/* LEFT: Job Posting */}
+          {showJob && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              style={{ width: `${actualJobWidth}%` }}
+              className="flex flex-col relative"
+            >
+              <div className="rounded-xl bg-white/80 p-6 shadow-lg backdrop-blur-md overflow-y-auto flex-1 mr-2">
+                <h2 className="text-lg font-semibold mb-4">Job Posting</h2>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-1">{job.Title}</h3>
+                    <p className="text-lg text-gray-700">{job.Company}</p>
+                    <p className="text-sm text-gray-500">{job.Location}</p>
+                  </div>
 
-        {/* Form Sections */}
-        <form className="space-y-6" onSubmit={handleSubmitClick}>
-          {/* Contact Info */}
-          <section className="border-t border-gray-100 pt-4">
-            <h2 className="text-xl font-medium text-gray-900 mb-4">
-              Contact Information
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-12">
-              {[
-                "firstName",
-                "lastName",
-                "email",
-                "location",
-                "phone",
-                "website",
-              ].map((field) => (
-                <div key={field}>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData[field as keyof typeof formData]}
-                    onChange={(e) =>
-                      setFormData({ ...formData, [field]: e.target.value })
-                    }
-                    className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black"
+                  <div className="border-t border-gray-200 pt-4">
+                    <h4 className="text-sm font-semibold mb-2 uppercase tracking-wide text-gray-600">
+                      Description
+                    </h4>
+                    <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
+                      {job.Description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resize handle */}
+              {showForm && (
+                <div
+                  onMouseDown={() => setIsDragging('job')}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-pink-300/50 transition-colors group"
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gray-300 rounded group-hover:bg-pink-400 transition-colors" />
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* MIDDLE: Resume Form */}
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              style={{ width: `${actualFormWidth}%` }}
+              className="flex flex-col relative"
+            >
+              <div className="rounded-xl bg-white/80 p-6 shadow-lg backdrop-blur-md overflow-y-auto flex-1 mx-2 space-y-6">
+                <h2 className="text-lg font-semibold">Edit Resume</h2>
+
+                {/* Contact Info */}
+                <div>
+                  <h3 className="text-md font-semibold mb-3">Contact Information</h3>
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={contactInfo.fullName}
+                      onChange={(e) => setContactInfo({...contactInfo, fullName: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={contactInfo.phone}
+                      onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="LinkedIn URL"
+                      value={contactInfo.linkedin}
+                      onChange={(e) => setContactInfo({...contactInfo, linkedin: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Portfolio/Website"
+                      value={contactInfo.portfolio}
+                      onChange={(e) => setContactInfo({...contactInfo, portfolio: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Location"
+                      value={contactInfo.location}
+                      onChange={(e) => setContactInfo({...contactInfo, location: e.target.value})}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Professional Summary */}
+                <div>
+                  <h3 className="text-md font-semibold mb-3">Professional Summary</h3>
+                  <textarea
+                    placeholder="Write a brief professional summary..."
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    rows={4}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                   />
                 </div>
-              ))}
-            </div>
-          </section>
 
-          {/* Other Sections */}
-          {[
-            { title: "Education", field: "education" },
-            { title: "Work Experience", field: "experience" },
-            { title: "Skills and Abilities", field: "skills" },
-            { title: "Certifications", field: "certifications" },
-            { title: "References", field: "references" },
-          ].map((section) => (
-            visibleSections.includes(section.field) && (
-              <section
-                key={section.field}
-                className="border-t border-gray-100 pt-4 relative group"
-              >
-                <button 
-                      onClick={() => removeSection(section.field)}
-                      className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all">
-                      <Trash2 size={18} />
-                </button>
-                <h2 className="text-xl font-medium text-gray-900 mb-4">
-                  {section.title}
-                </h2>
-                <textarea
-                  rows={5}
-                  value={formData[section.field as keyof typeof formData]}
-                  onChange={(e) =>
-                    setFormData({ ...formData, [section.field]: e.target.value })
-                  }
-                  className="w-full rounded-md border border-gray-300 bg-white/50 px-4 py-2 outline-none focus:border-black resize-none"
-                />
-              </section>
-            )
-          ))}
+                {/* Work Experience */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-md font-semibold">Work Experience</h3>
+                    <button
+                      onClick={addExperience}
+                      className="flex items-center gap-1 rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {experiences.map((exp, index) => (
+                      <div key={index} className="rounded-lg border border-gray-200 p-4 relative">
+                        {experiences.length > 1 && (
+                          <button
+                            onClick={() => removeExperience(index)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Company"
+                            value={exp.company}
+                            onChange={(e) => updateExperience(index, "company", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Job Title"
+                            value={exp.title}
+                            onChange={(e) => updateExperience(index, "title", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              placeholder="Start Date"
+                              value={exp.startDate}
+                              onChange={(e) => updateExperience(index, "startDate", e.target.value)}
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                            />
+                            <input
+                              type="text"
+                              placeholder="End Date (or Present)"
+                              value={exp.endDate}
+                              onChange={(e) => updateExperience(index, "endDate", e.target.value)}
+                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                            />
+                          </div>
+                          <textarea
+                            placeholder="Description (use bullet points)"
+                            value={exp.description}
+                            onChange={(e) => updateExperience(index, "description", e.target.value)}
+                            rows={3}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Submit Button */}
-          <motion.button
-            type="submit"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="bg-black text-white px-6 py-2 text-xs font-mono uppercase tracking-widest rounded-sm hover:opacity-90 mt-8"
-          >
-            Submit
-          </motion.button>
-        </form>
+                {/* Education */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-md font-semibold">Education</h3>
+                    <button
+                      onClick={addEducation}
+                      className="flex items-center gap-1 rounded-md bg-black px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {education.map((edu, index) => (
+                      <div key={index} className="rounded-lg border border-gray-200 p-4 relative">
+                        {education.length > 1 && (
+                          <button
+                            onClick={() => removeEducation(index)}
+                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="School/University"
+                            value={edu.school}
+                            onChange={(e) => updateEducation(index, "school", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Degree"
+                            value={edu.degree}
+                            onChange={(e) => updateEducation(index, "degree", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Field of Study"
+                            value={edu.field}
+                            onChange={(e) => updateEducation(index, "field", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Graduation Date"
+                            value={edu.graduationDate}
+                            onChange={(e) => updateEducation(index, "graduationDate", e.target.value)}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-        {/* --- ADD SECTION UI --- */}
-        {hiddenSections.length > 0 && (
-          <div className="mt-12 border-t border-dashed border-gray-200 pt-8">
-            <p className="text-xs font-bold uppercase text-gray-400 mb-4 tracking-widest text-center">
-              Add sections back to your resume
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {hiddenSections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => addSection(section.id)}
-                  className="flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:border-black hover:text-black transition-colors"
+                {/* Skills */}
+                <div>
+                  <h3 className="text-md font-semibold mb-3">Skills</h3>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      placeholder="Add a skill..."
+                      value={skillInput}
+                      onChange={(e) => setSkillInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <button
+                      onClick={addSkill}
+                      className="rounded-md bg-black px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {skills.map((skill, index) => (
+                      <Badge
+                        key={index}
+                        className="cursor-pointer hover:bg-red-100"
+                        onClick={() => removeSkill(skill)}
+                      >
+                        {skill} ×
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Resize handle */}
+              {showPreview && (
+                <div
+                  onMouseDown={() => setIsDragging('form')}
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-pink-300/50 transition-colors group"
                 >
-                  <PlusCircle size={14} />
-                  {section.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </motion.article>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gray-300 rounded group-hover:bg-pink-400 transition-colors" />
+                </div>
+              )}
+            </motion.div>
+          )}
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-2xl">
-            <h2 className="text-2xl font-bold text-black">Confirm Submission</h2>
-            <p className="mt-4 text-gray-600">
-              Are you sure you want to submit this resume? You won't be able to edit
-              your details after confirming.
-            </p>
+          {/* RIGHT: Live Preview */}
+          {showPreview && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              style={{ width: `${actualPreviewWidth}%` }}
+              className="flex flex-col"
+            >
+              <div className="rounded-xl bg-white p-12 shadow-2xl overflow-y-auto flex-1 ml-2"
+                style={{ fontFamily: "'Times New Roman', serif", lineHeight: 1.5 }}
+              >
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-600 mb-6">Preview</h2>
 
-            <div className="mt-8 flex flex-col gap-3">
-              <button
-                onClick={handleConfirmSubmit}
-                className="w-full rounded-md bg-black py-3 text-sm font-semibold text-white hover:opacity-90"
-              >
-                Confirm and Submit
-              </button>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-full rounded-md border border-gray-200 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-              >
-                Go back
-              </button>
-            </div>
-          </div>
+                {/* Contact Info */}
+                <div className="mb-10 text-center">
+                  <h1 className="text-3xl font-bold tracking-widest mb-2" style={{ letterSpacing: '0.05em' }}>
+                    {contactInfo.fullName ? contactInfo.fullName.toUpperCase() : "FIRST LAST"}
+                  </h1>
+                  <div className="text-xs text-gray-700 space-x-2">
+                    {contactInfo.location && <span>{contactInfo.location}</span>}
+                    {(contactInfo.location && (contactInfo.phone || contactInfo.email)) && <span>•</span>}
+                    {contactInfo.phone && <span>{contactInfo.phone}</span>}
+                    {(contactInfo.phone && contactInfo.email) && <span>•</span>}
+                    {contactInfo.email && <span>{contactInfo.email}</span>}
+                    {contactInfo.linkedin && <span>• {contactInfo.linkedin}</span>}
+                    {contactInfo.portfolio && <span>• {contactInfo.portfolio}</span>}
+                  </div>
+                </div>
+
+                {/* Education */}
+                {education.some(edu => edu.school || edu.degree) && (
+                  <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-3">
+                      Education
+                    </h2>
+                    <div className="space-y-3">
+                      {education.filter(edu => edu.school || edu.degree).map((edu, idx) => (
+                        <div key={idx} className="flex justify-between">
+                          <div>
+                            <h3 className="text-xs font-semibold">{edu.school || "University Name"}</h3>
+                            <p className="text-xs italic">
+                              {edu.degree || "Degree"}{edu.field && `, ${edu.field}`}
+                            </p>
+                          </div>
+                          <div className="text-right text-xs">
+                            {edu.graduationDate && <p>{edu.graduationDate}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Professional Summary */}
+                {summary && (
+                  <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-2">
+                      Professional Summary
+                    </h2>
+                    <p className="text-xs text-gray-800">{summary}</p>
+                  </div>
+                )}
+
+                {/* Experience */}
+                {experiences.some(exp => exp.company || exp.title) && (
+                  <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-3">
+                      Experience
+                    </h2>
+                    <div className="space-y-4">
+                      {experiences.filter(exp => exp.company || exp.title).map((exp, idx) => (
+                        <div key={idx}>
+                          <div className="flex justify-between mb-1">
+                            <div>
+                              <h3 className="text-xs font-semibold">{exp.company || "Company Name"}</h3>
+                              <p className="text-xs italic">{exp.title || "Job Title"}</p>
+                            </div>
+                            <div className="text-right text-xs">
+                              <p>{exp.startDate && exp.endDate ? `${exp.startDate} - ${exp.endDate}` : "Dates"}</p>
+                            </div>
+                          </div>
+                          {exp.description && (
+                            <ul className="text-xs text-gray-800 list-disc list-inside mt-1">
+                              {exp.description.split('\n').map((line, i) => line.trim() && (
+                                <li key={i}>{line.startsWith('•') || line.startsWith('-') ? line.replace(/^[-•]\s*/, '') : line}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills */}
+                {skills.length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-2">
+                      Skills
+                    </h2>
+                    <p className="text-xs text-gray-800">{skills.join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
-      )}
-    </motion.section>
+
+        {/* Apply Button */}
+        <div className="mt-6 flex justify-center">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleApply}
+            disabled={isSubmitting}
+            className="rounded-xl bg-black px-8 py-4 text-sm font-semibold text-white hover:opacity-90 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Submitting...' : 'Apply with This Resume'}
+          </motion.button>
+        </div>
+      </section>
+    </main>
   );
 }

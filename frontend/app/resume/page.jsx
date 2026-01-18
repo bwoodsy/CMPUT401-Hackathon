@@ -1,15 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CircleUser, Plus, Trash2, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function MasterResumePage() {
   const router = useRouter();
-  const [user, setUser] = useState("John");
+  const [user, setUser] = useState(null);
+  const [resumeId, setResumeId] = useState(null)
 
-  // Resume state
   const [contactInfo, setContactInfo] = useState({
     fullName: "",
     email: "",
@@ -18,6 +19,14 @@ export default function MasterResumePage() {
     portfolio: "",
     location: ""
   });
+
+  const MotionLink = motion(Link);
+  const links = [
+  { label: "← Back to listings", href: "/" },
+  { label: "Resume", href: "/resume" },
+  { label: "Applications", href: "/applications" },
+  { label: "About", href: "/about" },
+  ];
 
   const [summary, setSummary] = useState("");
 
@@ -71,44 +80,161 @@ export default function MasterResumePage() {
     setSkills(skills.filter(skill => skill !== skillToRemove));
   };
 
-  const handleSave = async () => {
-    const resumeData = {
+  useEffect(() => {
+  const getCurrentUser = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const token = localStorage.getItem('accessToken');
+
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${BASE_URL}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
+          throw new Error('Failed to fetch user');
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    getCurrentUser();
+    }, []);
+
+  useEffect(() => {
+  if (!user?.id) return;
+
+  const fetchMasterResume = async () => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/resumes/${user.id}/master`
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) return;
+        throw new Error('Failed to fetch master resume');
+      }
+
+      const result = await response.json();
+      const resumeData = result.data?.data;
+
+      if (!resumeData) return;
+
+      setContactInfo({
+        fullName: resumeData.contactInfo?.fullName || "",
+        email: resumeData.contactInfo?.email || "",
+        phone: resumeData.contactInfo?.phone || "",
+        linkedin: resumeData.contactInfo?.linkedin || "",
+        portfolio: resumeData.contactInfo?.portfolio || "",
+        location: resumeData.contactInfo?.location || ""
+      });
+
+      setSummary(resumeData.summary || "");
+
+      if (Array.isArray(resumeData.experiences)) {
+        setExperiences(resumeData.experiences);
+      }
+
+      if (Array.isArray(resumeData.education)) {
+        setEducation(resumeData.education);
+      }
+
+      if (Array.isArray(resumeData.skills)) {
+        setSkills(resumeData.skills);
+      }
+
+      setResumeId(result.data?.id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  fetchMasterResume();
+  }, [user]);
+
+
+
+  
+// Updated handleSave to POST or update the master resume
+const handleSave = async () => {
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  
+  if (!user?.id) {
+    alert('User not found. Please log in again.');
+    return;
+  }
+  
+  const resumeData = {
+    user_id: user.id,
+    name: "Master Resume", // You can make this dynamic if needed
+    data: {
       contactInfo,
       summary,
       experiences,
       education,
       skills
-    };
-    console.log("Saving resume:", resumeData);
-    // TODO: Add API call to save resume
-    alert("Resume saved successfully!");
+    },
+    is_master: true
   };
+  
+  try {
+    const response = await fetch(`${BASE_URL}/api/resumes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(resumeData)
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save resume');
+    }
+    
+    const result = await response.json();
+    console.log('Resume saved:', result);
+    
+    // Store the resume ID for future reference
+    setResumeId(result.data?.id);
+    
+    alert('Resume saved successfully!');
+  } catch (error) {
+    console.error('Error saving resume:', error);
+    alert('Failed to save resume. Please try again.');
+  }
+};
+
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100">
       {/* Nav */}
       <header className="mx-auto max-w-7xl px-6 pt-6 flex items-center justify-between">
-        <nav className="flex gap-6 text-sm">
-          {["Home", "Resume", "About", "Careers"].map((link) => (
-            <motion.a
-              key={link}
-              href="#"
-              className="cursor-pointer"
-              whileHover={{ scale: 1.1, color: "#ec4899" }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              {link}
-            </motion.a>
-          ))}
-          <motion.a
-            href="#"
-            className="flex items-center gap-1 cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            Get started →
-          </motion.a>
+        <nav className="flex gap-6">
+      {links.map(({ label, href }) => (
+        <MotionLink
+          key={label}
+          href={href}
+          className="cursor-pointer"
+          whileHover={{ scale: 1.1, color: "#ec4899" }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          {label}
+        </MotionLink>
+      ))}
         </nav>
+       
         <motion.div
           whileHover={{ scale: 1.1, opacity: 0.9 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -381,77 +507,53 @@ export default function MasterResumePage() {
               <Save size={18} /> Save Master Resume
             </motion.button>
           </div>
-
-          {/* RIGHT: Live Preview */}
+         {/* RIGHT: Live Preview */}
           <div className="sticky top-6 h-fit">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="rounded-xl bg-white p-12 shadow-2xl overflow-y-auto max-h-[calc(100vh-100px)]"
-              style={{ fontFamily: 'serif' }}
+              style={{ fontFamily: "'Times New Roman', serif", lineHeight: 1.5 }}
             >
-              {/* Contact Info Preview - Centered */}
-              <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold tracking-wide mb-3" style={{ letterSpacing: '0.15em' }}>
+              {/* Contact Info */}
+              <div className="mb-10 text-center">
+                <h1 className="text-3xl font-bold tracking-widest mb-2" style={{ letterSpacing: '0.05em' }}>
                   {contactInfo.fullName ? contactInfo.fullName.toUpperCase() : "FIRST LAST"}
                 </h1>
                 <div className="text-xs text-gray-700 space-x-2">
                   {contactInfo.location && <span>{contactInfo.location}</span>}
-                  {contactInfo.location && (contactInfo.phone || contactInfo.email) && <span>◦</span>}
+                  {(contactInfo.location && (contactInfo.phone || contactInfo.email)) && <span>•</span>}
                   {contactInfo.phone && <span>{contactInfo.phone}</span>}
-                  {contactInfo.phone && contactInfo.email && <span>◦</span>}
+                  {(contactInfo.phone && contactInfo.email) && <span>•</span>}
                   {contactInfo.email && <span>{contactInfo.email}</span>}
+                  {contactInfo.linkedin && <span>• {contactInfo.linkedin}</span>}
+                  {contactInfo.portfolio && <span>• {contactInfo.portfolio}</span>}
                 </div>
               </div>
 
-              {/* Education Preview */}
-              {education.some(edu => edu.school || edu.degree) && (
-                <div className="mb-6">
-                  <h2 className="text-sm font-bold mb-3 uppercase tracking-wider border-b border-gray-900 pb-1">
-                    Education
-                  </h2>
-                  <div className="space-y-3">
-                    {education.filter(edu => edu.school || edu.degree).map((edu, index) => (
-                      <div key={index}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-xs font-bold">{edu.school || "University Name"}</h3>
-                            <p className="text-xs italic mt-0.5">
-                              {edu.degree || "Degree"}{edu.field && `, ${edu.field}`}
-                            </p>
-                          </div>
-                          <div className="text-right text-xs">
-                            {edu.graduationDate && <p>{edu.graduationDate}</p>}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Summary Preview */}
+            
+              {/* Professional Summary */}
               {summary && (
                 <div className="mb-6">
-                  <h2 className="text-sm font-bold mb-3 uppercase tracking-wider border-b border-gray-900 pb-1">
+                  <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-2">
                     Professional Summary
                   </h2>
-                  <p className="text-xs text-gray-800 leading-relaxed">{summary}</p>
+                  <p className="text-xs text-gray-800">{summary}</p>
                 </div>
               )}
 
-              {/* Experience Preview */}
+              {/* Experience */}
               {experiences.some(exp => exp.company || exp.title) && (
                 <div className="mb-6">
-                  <h2 className="text-sm font-bold mb-3 uppercase tracking-wider border-b border-gray-900 pb-1">
+                  <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-3">
                     Experience
                   </h2>
                   <div className="space-y-4">
-                    {experiences.filter(exp => exp.company || exp.title).map((exp, index) => (
-                      <div key={index}>
-                        <div className="flex justify-between items-start mb-1">
+                    {experiences.filter(exp => exp.company || exp.title).map((exp, idx) => (
+                      <div key={idx}>
+                        <div className="flex justify-between mb-1">
                           <div>
-                            <h3 className="text-xs font-bold">{exp.company || "Company Name"}</h3>
+                            <h3 className="text-xs font-semibold">{exp.company || "Company Name"}</h3>
                             <p className="text-xs italic">{exp.title || "Job Title"}</p>
                           </div>
                           <div className="text-right text-xs">
@@ -459,15 +561,11 @@ export default function MasterResumePage() {
                           </div>
                         </div>
                         {exp.description && (
-                          <div className="text-xs text-gray-800 mt-2 leading-relaxed pl-0">
-                            {exp.description.split('\n').map((line, i) => (
-                              line.trim() && (
-                                <p key={i} className="mb-1">
-                                  {line.startsWith('•') || line.startsWith('-') ? line : `• ${line}`}
-                                </p>
-                              )
+                          <ul className="text-xs text-gray-800 list-disc list-inside mt-1">
+                            {exp.description.split('\n').map((line, i) => line.trim() && (
+                              <li key={i}>{line.startsWith('•') || line.startsWith('-') ? line.replace(/^[-•]\s*/, '') : line}</li>
                             ))}
-                          </div>
+                          </ul>
                         )}
                       </div>
                     ))}
@@ -475,18 +573,37 @@ export default function MasterResumePage() {
                 </div>
               )}
 
-              {/* Skills Preview */}
+              {/* Education */}
+              {education.some(edu => edu.school || edu.degree) && (
+                <div className="mb-6">
+                  <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-3">
+                    Education
+                  </h2>
+                  <div className="space-y-3">
+                    {education.filter(edu => edu.school || edu.degree).map((edu, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <div>
+                          <h3 className="text-xs font-semibold">{edu.school || "University Name"}</h3>
+                          <p className="text-xs italic">
+                            {edu.degree || "Degree"}{edu.field && `, ${edu.field}`}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs">
+                          {edu.graduationDate && <p>{edu.graduationDate}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Skills */}
               {skills.length > 0 && (
                 <div>
-                  <h2 className="text-sm font-bold mb-3 uppercase tracking-wider border-b border-gray-900 pb-1">
+                  <h2 className="text-sm font-bold uppercase tracking-wide border-b border-gray-900 pb-1 mb-2">
                     Skills
                   </h2>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-[120px_1fr] gap-x-4 text-xs">
-                      <span className="font-bold">Technical:</span>
-                      <span className="text-gray-800">{skills.join(', ')}</span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-800">{skills.join(', ')}</p>
                 </div>
               )}
             </motion.div>

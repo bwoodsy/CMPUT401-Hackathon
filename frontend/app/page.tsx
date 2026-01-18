@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CircleUser } from "lucide-react";
 import { Badge } from "@/components/ui/badge"
+import Link from "next/link";
 
 type Job = {
   jobID: string;
@@ -19,6 +20,15 @@ export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+
+  const MotionLink = motion(Link);
+  const links = [
+  { label: "Home", href: "/" },
+  { label: "Resume", href: "/resume" },
+  { label: "Applications", href: "/applications" },
+  { label: "About", href: "/about" },
+  ];
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -46,44 +56,62 @@ export default function HomePage() {
   }, []);
 
   //get current user data
+useEffect(() => {
+  // Get current user data
   const getCurrentUser = async () => {
-  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const token = localStorage.getItem('accessToken');
-  
-  const response = await fetch(`${BASE_URL}/api/auth/me`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const token = localStorage.getItem('accessToken');
+    
+    // If no token, don't attempt to fetch user
+    if (!token) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        // If unauthorized, clear the invalid token
+        if (response.status === 401) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const data = await response.json();
+      setUser(data.user); // Access the fullName from the nested user object
+    } catch (error) {
+      console.error('Error fetching user:', error);
     }
   });
     return response.json();
   };
+  
+  getCurrentUser();
+}, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
       <header className="mx-auto max-w-7xl px-6 pt-6 flex items-center justify-between">
-      <nav className="flex gap-6 text-sm">
-        {["Home", "Resume", "About", "Careers"].map((link) => (
-          <motion.a
-            key={link}
-            href="#"
-            className="cursor-pointer"
-            whileHover={{ scale: 1.1, color: "#ec4899" }} // pink-500
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            {link}
-          </motion.a>
-        ))}
-
-        <motion.a
-          href="#"
-          className="flex items-center gap-1 cursor-pointer"
+      <nav className="flex gap-6">
+      {links.map(({ label, href }) => (
+        <MotionLink
+          key={label}
+          href={href}
+          className="cursor-pointer"
           whileHover={{ scale: 1.1, color: "#ec4899" }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          Get started →
-        </motion.a>
-      </nav>
+          {label}
+        </MotionLink>
+      ))}
+    </nav>
 
       <motion.div
         whileHover={{ scale: 1.1, opacity: 0.9 }}
@@ -97,7 +125,7 @@ export default function HomePage() {
 
       {/* Title */}
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-center font-serif text-6xl">Career Listings</h1>
+        <h1 className="text-center font-serif text-6xl">{user ? `${user.fullName}'s` : ''} Listings</h1>
 
         <div className="mx-auto mt-10 max-w-2xl space-y-5">
           {loading && <p className="text-center">Loading jobs…</p>}
