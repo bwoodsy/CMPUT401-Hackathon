@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { CircleUser } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -25,7 +26,7 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password }), // add `name` only if signing up
     });
 
-    const data = await res.json(); // read once
+    const data = await res.json(); 
 
     if (!res.ok) {
       throw new Error(data.message || "Login failed");
@@ -33,7 +34,8 @@ export default function LoginPage() {
 
     console.log("Login successful:", data);
     router.push("/home");
-    // redirect or save token here
+    localStorage.setItem('accessToken', data.session.accessToken);
+    localStorage.setItem('refreshToken', data.session.refreshToken);
   } catch (err: any) {
     setError(err.message);
   } finally {
@@ -43,8 +45,42 @@ export default function LoginPage() {
 
 
   return (
-    
+    <>
+    <header className="mx-auto max-w-5xl px-6 pt-6 flex items-center justify-between">
+      <nav className="flex gap-6 text-sm">
+        {[ "← Back to listings", "Resume", "About", "Careers"].map((link) => (
+          <motion.a
+            key={link}
+            href="/"
+            className="cursor-pointer"
+            whileHover={{ scale: 1.1, color: "#ec4899" }} // pink-500
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            {link}
+          </motion.a>
+        ))}
+
+        <motion.a
+          href="#"
+          className="flex items-center gap-1 cursor-pointer"
+          whileHover={{ scale: 1.1, color: "#ec4899" }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          Get started →
+        </motion.a>
+      </nav>
+
+      <motion.div
+        whileHover={{ scale: 1.1, opacity: 0.9 }}
+        transition={{ type: "spring", stiffness: 300 }}
+        className="cursor-pointer"
+        onClick={() => router.push("/login")}
+      >
+        <CircleUser />
+      </motion.div>
+      </header>
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100">
+      
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -103,5 +139,6 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </main>
+    </>
   );
 }

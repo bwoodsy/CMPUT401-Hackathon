@@ -56,7 +56,7 @@ app.post('/api/jobs', async (req, res) => {
 
         const { data, error } = await supabase
             .from('jobs')
-            .insert([{ title, company, location, description}])
+            .insert([{ title, company, location, description, tags}])
             .select();
 
         if (error) {
