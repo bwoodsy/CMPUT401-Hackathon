@@ -19,6 +19,7 @@ export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState("");
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -45,19 +46,42 @@ export default function HomePage() {
     fetchJobs();
   }, []);
 
-  //get current user data
+  useEffect(() => {
+  // Get current user data
   const getCurrentUser = async () => {
-  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const token = localStorage.getItem('accessToken');
-  
-  const response = await fetch(`${BASE_URL}/api/auth/me`, {
-    headers: {
-      'Authorization': `Bearer ${token}`
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const token = localStorage.getItem('accessToken');
+    
+    // If no token, don't attempt to fetch user
+    if (!token) {
+      return;
     }
-  });
-    return response.json();
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        // If unauthorized, clear the invalid token
+        if (response.status === 401) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const data = await response.json();
+      setUser(data.user.fullName); // Access the fullName from the nested user object
+    } catch (error) {
+      console.error('Error fetching user:', error);
+    }
   };
-
+  
+  getCurrentUser();
+}, []);
   return (
     <main className="min-h-screen bg-gradient-to-b from-pink-200 via-pink-100 to-amber-100 text-black">
       {/* Nav */}
@@ -97,7 +121,7 @@ export default function HomePage() {
 
       {/* Title */}
       <section className="mx-auto max-w-5xl px-6 py-12">
-        <h1 className="text-center font-serif text-6xl">Career Listings</h1>
+        <h1 className="text-center font-serif text-6xl">{user} Listings</h1>
 
         <div className="mx-auto mt-10 max-w-2xl space-y-5">
           {loading && <p className="text-center">Loading jobs…</p>}

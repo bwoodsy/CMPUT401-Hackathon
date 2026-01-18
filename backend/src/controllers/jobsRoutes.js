@@ -104,6 +104,7 @@ app.put('/api/jobs/:jobID', async (req, res) => {
         if (req.body.company !== undefined) allowedUpdates.company = req.body.company;
         if (req.body.location !== undefined) allowedUpdates.location = req.body.location;
         if (req.body.description !== undefined) allowedUpdates.description = req.body.description;
+        if (req.body.tags !== undefined) allowedUpdates.tags = req.body.tags;
 
         // If nothing to update, return early
         if (Object.keys(allowedUpdates).length === 0) {
