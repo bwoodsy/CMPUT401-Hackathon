@@ -53,7 +53,7 @@ export default function SignupPage() {
     }
 
     console.log("Signup successful:", data);
-    router.push("/home");
+    router.push("/");
     // redirect or save token here
   } catch (err: any) {
     setError(err.message);

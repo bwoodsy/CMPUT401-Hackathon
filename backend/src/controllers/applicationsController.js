@@ -318,6 +318,58 @@ const applicationsController = {
         message: 'Failed to fetch applications'
       });
     }
+  }, 
+
+    updateApplicationNotes: async (req, res) => {
+    try {
+      const { applicationId } = req.params;
+      const { notes } = req.body;
+
+      // Basic validation
+      if (notes === undefined) {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "Notes field is required"
+        });
+      }
+
+      const { data, error } = await supabase
+        .from("job_applications")
+        .update({
+          notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", applicationId)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return res.status(404).json({
+            error: "Not Found",
+            message: "Application not found"
+          });
+        }
+
+        console.error("Supabase error:", error);
+        return res.status(500).json({
+          error: "Database Error",
+          message: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Notes updated successfully",
+        data
+      });
+    } catch (error) {
+      console.error("Error updating application notes:", error);
+      return res.status(500).json({
+        error: "Server Error",
+        message: "Failed to update notes"
+      });
+    }
   }
 };
 

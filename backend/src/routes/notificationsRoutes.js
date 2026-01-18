@@ -12,4 +12,7 @@ router.post('/', notificationsController.createNotification);
 
 router.put('/:notificationId', notificationsController.updateNotification);
 
+router.patch('/:notificationId/read', notificationsController.completeNotification)
+
+
 module.exports = router;

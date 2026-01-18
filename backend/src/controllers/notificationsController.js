@@ -18,6 +18,7 @@ const notificationsController = {
           job_applications(company_name, position)
         `)
         .eq('user_id', userId)
+        .lte('notification_date', new Date().toISOString())
         .order('notification_date', { ascending: true });
 
       if (error) {

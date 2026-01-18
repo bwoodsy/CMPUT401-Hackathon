@@ -68,7 +68,7 @@ const STAGE_COLORS: { [key: string]: string } = {
   'Rejected': "bg-red-100 text-red-700 border-red-200",
 };
 
-export default function ApplicationsPage() {
+export default function ApplicationsPage() {// This calculates counts based on the 'stage_name' in your Supabase data
   const router = useRouter();
   const [user, setUser] = useState<{ id: string; email: string; fullName: string } | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
@@ -78,6 +78,9 @@ export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
   const [reminderDate, setReminderDate] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -143,6 +146,53 @@ export default function ApplicationsPage() {
       console.error('Error fetching stages:', error);
     }
   };
+
+  const openNotesModal = (app: Application) => {
+  setSelectedApplication(app);
+  setNotesDraft(app.notes ?? "");
+  setShowNotesModal(true);
+};
+
+const closeNotesModal = () => {
+  setShowNotesModal(false);
+  setNotesDraft("");
+  setSelectedApplication(null);
+};
+
+const saveNotes = async () => {
+  if (!selectedApplication) return;
+
+  try {
+    setSavingNotes(true);
+
+    const response = await fetch(`${BASE_URL}/api/applications/${selectedApplication.id}/notes`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ notes: notesDraft }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save notes");
+    }
+
+    // Update local state immediately
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === selectedApplication.id ? { ...a, notes: notesDraft } : a
+      )
+    );
+
+    closeNotesModal();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save notes. Please try again.");
+  } finally {
+    setSavingNotes(false);
+  }
+};
+
 
   const fetchApplications = async (userId: string) => {
     try {
@@ -227,43 +277,40 @@ export default function ApplicationsPage() {
   };
 
   const setReminder = async () => {
-    if (!selectedApplication || !reminderDate || !user) {
-      return;
+  if (!selectedApplication || !reminderDate || !user) return;
+
+  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/notifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: user.id, // Assuming user object has an id
+        application_id: selectedApplication.id,
+        notification_date: reminderDate, // Matches the local state 'reminderDate'        
+        message: `Reminder: Follow up on your application for ${selectedApplication.position} at ${selectedApplication.company_name}`,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create notification");
     }
-    
-    try {
-      const response = await fetch(`${BASE_URL}/api/notifications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          application_id: selectedApplication.id,
-          notification_date: reminderDate,
-          message: `Follow up with ${selectedApplication.company_name} - ${selectedApplication.position}`
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create reminder');
-      }
-      
-      const result = await response.json();
-      
-      // Update local notifications state
-      setNotifications({
-        ...notifications,
-        [selectedApplication.id]: result.data
-      });
-      
-      setShowReminderModal(false);
-      setReminderDate("");
-    } catch (error) {
-      console.error('Error setting reminder:', error);
-      alert('Failed to set reminder. Please try again.');
-    }
-  };
+
+    const result = await response.json();
+    console.log("Notification set successfully:", result);
+
+    // Close the modal and reset state
+    setShowReminderModal(false);
+    setReminderDate("");
+    alert("Reminder set successfully!");
+  } catch (error) {
+    console.error("Error setting reminder:", error);
+    alert("Could not set reminder. Please try again.");
+  }
+};
 
   const MotionLink = motion(Link);
   const links = [
@@ -337,7 +384,7 @@ export default function ApplicationsPage() {
             All ({applications.length})
           </button>
           {stages.map((stage) => {
-            const count = applications.filter(app => app.stage_id === stage.id).length;
+            const count = applications.filter(app => app.stage_name === stage.name).length;
             return (
               <button
                 key={stage.id}
@@ -435,7 +482,15 @@ export default function ApplicationsPage() {
                         View Resume
                       </button>
                     )}
+                    <button
+                      onClick={() => openNotesModal(app)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-black/5 hover:bg-black/10 text-xs font-medium transition-colors"
+                    >
+                      <FileText size={14} />
+                      {app.notes?.trim() ? "Edit Notes" : "Add Notes"}
+                    </button>
                   </div>
+                  
                 </motion.div>
               );
             })}
@@ -627,6 +682,78 @@ export default function ApplicationsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Notes Modal */}
+<AnimatePresence>
+  {showNotesModal && selectedApplication && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={closeNotesModal}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold">
+              Notes — {selectedApplication.company_name}
+            </h2>
+            <p className="text-sm text-gray-500">{selectedApplication.position}</p>
+          </div>
+          <button
+            onClick={closeNotesModal}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Textarea */}
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Your notes
+          </label>
+          <textarea
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder="Add interview details, recruiter name, follow-up plan, salary range, etc."
+            rows={8}
+            className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+          />
+          <p className="mt-2 text-xs text-gray-500">
+            Tip: Paste the job link, add key requirements, and track your follow-ups.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={saveNotes}
+            disabled={savingNotes}
+            className="flex-1 rounded-md bg-black px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {savingNotes ? "Saving..." : "Save Notes"}
+          </button>
+          <button
+            onClick={closeNotesModal}
+            className="flex-1 rounded-md border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+
     </main>
   );
 }
